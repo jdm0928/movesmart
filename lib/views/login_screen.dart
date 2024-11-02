@@ -25,7 +25,7 @@ class LoginScreen extends StatelessWidget {
                 TextField(
                   controller: usernameController,
                   decoration: InputDecoration(
-                    labelText: '아이디 (이메일)',
+                    labelText: '아이디',
                     border: OutlineInputBorder(),
                   ),
                 ),
