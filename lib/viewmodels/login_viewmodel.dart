@@ -6,7 +6,7 @@ import '../services/navigation_service.dart';
 import '../views/home_screen.dart';
 import '../views/signup_screen.dart'; // SignUpScreen 임포트 추가
 
-class LoginViewModel {
+class LoginViewModel extends ChangeNotifier {
   final NavigationService _navigationService = NavigationService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 

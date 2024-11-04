@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../viewmodels/login_viewmodel.dart';
+import 'package:provider/provider.dart'; // Provider 패키지 임포트
+import '../viewmodels/login_viewmodel.dart'; // LoginViewModel import
 
 class LoginScreen extends StatelessWidget {
-  final LoginViewModel viewModel = LoginViewModel();
   final TextEditingController usernameController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
 
@@ -46,6 +46,7 @@ class LoginScreen extends StatelessWidget {
                   onPressed: () {
                     String username = usernameController.text;
                     String password = passwordController.text;
+                    final viewModel = Provider.of<LoginViewModel>(context, listen: false);
                     viewModel.login(context, username, password);
                   },
                   child: const Text('로그인 하기'),
@@ -58,7 +59,7 @@ class LoginScreen extends StatelessWidget {
                   children: [
                     TextButton(
                       onPressed: () {
-                        // 회원가입 페이지로 이동하는 로직 호출
+                        final viewModel = Provider.of<LoginViewModel>(context, listen: false);
                         viewModel.navigateToSignUp(context);
                       },
                       child: const Text('회원가입'),
@@ -66,7 +67,7 @@ class LoginScreen extends StatelessWidget {
                     const SizedBox(width: 16),
                     TextButton(
                       onPressed: () {
-                        // 아이디 찾기 페이지로 이동하는 로직 호출
+                        final viewModel = Provider.of<LoginViewModel>(context, listen: false);
                         viewModel.navigateToForgotUsername(context);
                       },
                       child: const Text('아이디 찾기'),
@@ -74,7 +75,7 @@ class LoginScreen extends StatelessWidget {
                     const SizedBox(width: 16),
                     TextButton(
                       onPressed: () {
-                        // 비밀번호 찾기 페이지로 이동하는 로직 호출
+                        final viewModel = Provider.of<LoginViewModel>(context, listen: false);
                         viewModel.navigateToForgotPassword(context);
                       },
                       child: const Text('비밀번호 찾기'),
@@ -176,6 +177,8 @@ class LoginScreen extends StatelessWidget {
           ),
         ],
       ),
-    ).then((value) => value ?? false);
+    ).then((value) => value ??
+        // 기본값 반환
+        false);
   }
 }

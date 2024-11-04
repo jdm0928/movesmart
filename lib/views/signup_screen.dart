@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../viewmodels/signup_viewmodel.dart';
-import '../views/login_screen.dart'; // LoginScreen 임포트 추가
-import '../models/country_codes.dart'; // 국가 코드 파일 임포트
+import 'package:provider/provider.dart';
+import '../viewmodels/signup_viewmodel.dart'; // ViewModel import
+import 'login_screen.dart'; // 로그인 화면 import
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -9,224 +9,204 @@ class SignUpScreen extends StatefulWidget {
 }
 
 class _SignUpScreenState extends State<SignUpScreen> {
-  final SignUpViewModel viewModel = SignUpViewModel();
-  final TextEditingController nicknameController = TextEditingController(); // 닉네임 입력
-  final TextEditingController usernameController = TextEditingController(); // 아이디 입력
-  final TextEditingController emailController = TextEditingController(); // 이메일 입력
-  final TextEditingController passwordController = TextEditingController(); // 비밀번호 입력
-  final TextEditingController confirmPasswordController = TextEditingController(); // 비밀번호 확인 입력
-  final TextEditingController phoneController = TextEditingController(); // 전화번호 입력
-  final TextEditingController verificationCodeController = TextEditingController(); // 인증 코드 입력
+  final TextEditingController _nicknameController = TextEditingController();
+  final TextEditingController _localPartController = TextEditingController(); // 로컬 부분 컨트롤러
+  final TextEditingController _domainController = TextEditingController(); // 도메인 부분 컨트롤러
+  final List<String> _domainList = ['gmail.com', 'naver.com', 'daum.net', 'nate.com', '직접 입력']; // 도메인 리스트
 
-  String selectedCountryCode = '+82'; // 기본 국가 번호 설정
-  bool passwordsMatch = true; // 비밀번호 확인 상태
-  String usernameCheckMessage = ''; // 아이디 중복 확인 메시지
-  Color usernameCheckColor = Colors.transparent; // 아이디 중복 확인 메시지 색상
+  @override
+  void dispose() {
+    _nicknameController.dispose();
+    _localPartController.dispose(); // 로컬 부분 컨트롤러 메모리 해제
+    _domainController.dispose(); // 도메인 부분 컨트롤러 메모리 해제
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Provider를 통해 ViewModel 가져오기
+    final viewModel = Provider.of<SignUpViewModel>(context);
+
+    // 닉네임 변경 시 TextEditingController에 반영
+    _nicknameController.text = viewModel.nickname;
+    _nicknameController.selection = TextSelection.fromPosition(TextPosition(offset: _nicknameController.text.length));
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('회원가입'),
+        title: Text('회원가입'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back), // 뒤로 가기 아이콘
-          onPressed: () {
-            // LoginScreen으로 이동
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => LoginScreen()),
-            );
+          icon: Icon(Icons.arrow_back),
+          onPressed: () async {
+            bool? shouldExit = await viewModel.showExitConfirmationDialog(context);
+            if (shouldExit == true) {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => LoginScreen()),
+              );
+            }
           },
         ),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Center(
+        child: SingleChildScrollView(
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 닉네임 입력 필드
+              // 닉네임 입력 박스
               TextField(
-                controller: nicknameController,
+                controller: _nicknameController,
+                onChanged: (value) {
+                  viewModel.onNicknameChanged(value); // 닉네임 입력 처리
+                },
                 decoration: InputDecoration(
                   labelText: '닉네임',
-                  border: UnderlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 이메일 입력 필드
-              TextField(
-                controller: emailController,
-                decoration: InputDecoration(
-                  labelText: '이메일',
-                  border: UnderlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // 아이디 입력 필드 및 중복 확인 버튼
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: usernameController,
-                      decoration: InputDecoration(
-                        labelText: '아이디',
-                        border: UnderlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () async {
-                      // 중복 확인 로직 호출
-                      bool isAvailable = await viewModel.checkUsername(context, usernameController.text);
-                      setState(() {
-                        if (isAvailable) {
-                          usernameCheckMessage = '사용 가능한 아이디입니다.';
-                          usernameCheckColor = Colors.green;
-                        } else {
-                          usernameCheckMessage = '이미 사용 중인 아이디입니다.';
-                          usernameCheckColor = Colors.red;
-                        }
-                      });
+                  border: OutlineInputBorder(),
+                  suffixIcon: viewModel.nickname.isNotEmpty
+                      ? IconButton(
+                    icon: Icon(Icons.clear),
+                    onPressed: () {
+                      viewModel.clearNickname(); // X 버튼 클릭 시 닉네임 초기화
+                      _nicknameController.clear(); // 닉네임 입력 필드 비우기
                     },
-                    child: const Text('중복 확인'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              // 아이디 중복 확인 메시지
-              Text(
-                usernameCheckMessage,
-                style: TextStyle(color: usernameCheckColor, fontSize: 12),
-              ),
-              const SizedBox(height: 16),
-
-              // 비밀번호 입력 필드
-              TextField(
-                controller: passwordController,
-                decoration: InputDecoration(
-                  labelText: '비밀번호',
-                  border: UnderlineInputBorder(),
+                  )
+                      : null,
                 ),
-                obscureText: true,
               ),
-              const SizedBox(height: 16),
-
-              // 비밀번호 확인 입력 필드
-              TextField(
-                controller: confirmPasswordController,
-                decoration: InputDecoration(
-                  labelText: '비밀번호 확인',
-                  border: UnderlineInputBorder(),
-                ),
-                obscureText: true,
-                onChanged: (value) {
-                  setState(() {
-                    passwordsMatch = passwordController.text == value; // 비밀번호 확인
-                  });
-                },
-              ),
-              if (!passwordsMatch)
+              if (!viewModel.isNicknameValid) // 닉네임 유효성 검사 메시지
                 Padding(
                   padding: const EdgeInsets.only(top: 8.0),
                   child: Text(
-                    '비밀번호가 다릅니다.',
-                    style: TextStyle(color: Colors.red, fontSize: 12),
+                    viewModel.nicknameErrorMessage,
+                    style: TextStyle(color: Colors.red),
                   ),
                 ),
-              const SizedBox(height: 16),
+              SizedBox(height: 32),
 
-              // 전화번호 입력 필드
+              // 이메일 입력 박스
               Row(
                 children: [
+                  // 로컬 부분 입력
                   Expanded(
-                    flex: 1,
-                    child: DropdownButton<String>(
-                      isExpanded: true,
-                      value: selectedCountryCode,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedCountryCode = newValue!; // 선택한 국가 번호 저장
-                        });
+                    child: TextField(
+                      controller: _localPartController,
+                      onChanged: (value) {
+                        viewModel.onEmailChanged(value + '@' + _domainController.text); // 변경된 로컬 부분을 업데이트
                       },
-                      items: countryCodes.map<DropdownMenuItem<String>>((CountryCode value) {
-                        return DropdownMenuItem<String>(
-                          value: value.code,
-                          child: Text('${value.country} (${value.code})'), // 국가 이름과 번호 표시
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 2,
-                    child: TextField(
-                      controller: phoneController,
                       decoration: InputDecoration(
-                        labelText: '전화번호',
-                        border: UnderlineInputBorder(),
+                        labelText: '로컬 부분',
+                        border: OutlineInputBorder(),
+                        suffixIcon: _localPartController.text.isNotEmpty
+                            ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            _localPartController.clear(); // 로컬 부분 입력 필드 비우기
+                            viewModel.onEmailChanged(''); // 이메일 업데이트
+                          },
+                        )
+                            : null,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      // 전화번호 인증 로직 호출
-                      viewModel.sendVerificationCode(context, phoneController.text, selectedCountryCode); // 선택한 국가 번호 사용
-                    },
-                    child: const Text('인증하기'),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // SMS 코드 입력 필드
-              Row(
-                children: [
+                  SizedBox(width: 8), // 간격 추가
+                  Text('@'), // 고정된 @ 기호
+                  SizedBox(width: 8), // 간격 추가
+                  // 도메인 부분 입력
                   Expanded(
-                    flex: 2,
                     child: TextField(
-                      controller: verificationCodeController,
+                      controller: _domainController,
+                      onChanged: (value) {
+                        viewModel.onEmailChanged(_localPartController.text + '@' + value); // 이메일 업데이트
+                      },
                       decoration: InputDecoration(
-                        labelText: '인증 코드',
-                        border: UnderlineInputBorder(),
+                        labelText: '도메인',
+                        border: OutlineInputBorder(),
+                        suffixIcon: _domainController.text.isNotEmpty
+                            ? IconButton(
+                          icon: Icon(Icons.clear),
+                          onPressed: () {
+                            _domainController.clear(); // 도메인 입력 필드 비우기
+                            viewModel.onEmailChanged(''); // 이메일 업데이트
+                          },
+                        )
+                            : null,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  ElevatedButton(
-                    onPressed: () {
-                      // 인증 코드 입력 로직
+                  SizedBox(width: 8), // 간격 추가
+                  // 도메인 선택 리스트
+                  DropdownButton<String>(
+                    value: _domainController.text.isEmpty ? null : _domainController.text,
+                    hint: Text('도메인 선택'),
+                    items: _domainList.map((String domain) {
+                      return DropdownMenuItem<String>(
+                        value: domain,
+                        child: Text(domain),
+                      );
+                    }).toList(),
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        if (newValue == '직접 입력') {
+                          _domainController.clear(); // 직접 입력 선택 시 도메인 필드 비우기
+                        } else {
+                          _domainController.text = newValue;
+                        }
+                        viewModel.onEmailChanged(_localPartController.text + '@' + _domainController.text); // 이메일 업데이트
+                      }
                     },
-                    child: const Text('확인'),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              if (!viewModel.isEmailValid) // 이메일 유효성 검사 메시지
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Text(
+                    viewModel.emailErrorMessage,
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+              SizedBox(height: 8),
 
-              // 타이머 표시
-              if (viewModel.isTimerActive)
-                Text('남은 시간: ${viewModel.remainingTime} 초'),
-              const SizedBox(height: 20),
+              // 발송 버튼
+              ElevatedButton(
+                onPressed: viewModel.isEmailValid && !viewModel.isEmailSent
+                    ? () {
+                  viewModel.sendVerificationEmail(); // 이메일 발송 함수 호출
+                }
+                    : null, // 유효하지 않거나 이미 발송된 경우 비활성화
+                child: Text('발송'),
+              ),
+              SizedBox(height: 32),
+
+              // 비밀번호 입력 박스
+              TextField(
+                onChanged: (value) {
+                  viewModel.password = value; // 비밀번호 입력 처리
+                },
+                decoration: InputDecoration(
+                  labelText: '비밀번호',
+                  border: OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      viewModel.isPasswordVisible ? Icons.visibility : Icons.visibility_off, // 비밀번호 가시성 상태에 따라 아이콘 변경
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        viewModel.isPasswordVisible = !viewModel.isPasswordVisible; // 비밀번호 가시성 상태 변경
+                      });
+                    },
+                  ),
+                ),
+                obscureText: !viewModel.isPasswordVisible, // 비밀번호 가시성에 따라 숨김 처리
+              ),
+              SizedBox(height: 32),
 
               // 회원가입 버튼
-              Align(
-                alignment: Alignment.centerRight,
-                child: ElevatedButton(
-                  onPressed: () {
-                    String nickname = nicknameController.text;
-                    String username = usernameController.text;
-                    String email = emailController.text;
-                    String password = passwordController.text;
-                    String phone = phoneController.text;
-                    String verificationCode = verificationCodeController.text;
-                    viewModel.signUp(context, nickname, username, email, password, phone, verificationCode); // 회원가입 호출
-                  },
-                  child: const Text('회원가입'),
-                ),
+              ElevatedButton(
+                onPressed: () {
+                  viewModel.signUp(); // 회원가입 처리
+                },
+                child: Text('회원가입'),
               ),
             ],
           ),

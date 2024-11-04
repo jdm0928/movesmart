@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // Provider 패키지 임포트
 import '../viewmodels/splash_viewmodel.dart';
-import '../views/login_screen.dart'; // 로그인 화면 임포트
 
 class SplashScreen extends StatelessWidget {
-  final SplashViewModel viewModel = SplashViewModel();
-
   @override
   Widget build(BuildContext context) {
-    viewModel.navigateToLogin(context); // 로그인 화면으로 이동
+    // SplashViewModel을 Provider에서 가져옴
+    final viewModel = Provider.of<SplashViewModel>(context, listen: false);
+
+    // 화면이 빌드된 후 로그인 화면으로 이동
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      viewModel.navigateToLogin(context); // 로그인 화면으로 이동
+    });
 
     return Scaffold(
       backgroundColor: Colors.blue,
