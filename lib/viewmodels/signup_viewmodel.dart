@@ -37,15 +37,12 @@ class SignUpViewModel extends ChangeNotifier {
   // 닉네임 입력 처리
   void onNicknameChanged(String value) {
     nickname = value;
-    isNicknameValid = value.isNotEmpty; // 입력된 값이 있을 경우 유효하다고 설정
+    isNicknameValid = value.isNotEmpty && value.length <= 15; // 15자 이상 체크
 
     // 기본 유효성 검사
     if (nickname.isEmpty) {
+      isNicknameValid = false;
       nicknameErrorMessage = ''; // 비어 있으면 에러 메시지 제거
-      isNicknameValid = false;
-    } else if (nickname.length > 15) {
-      nicknameErrorMessage = '닉네임은 15자 이하로 작성해주세요.';
-      isNicknameValid = false;
     } else if (!RegExp(r'^[a-zA-Z0-9]*$').hasMatch(nickname)) {
       nicknameErrorMessage = '닉네임은 문자와 숫자로만 작성해주세요.';
       isNicknameValid = false;

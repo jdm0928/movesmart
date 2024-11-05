@@ -150,10 +150,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
 
-              // 유효성 검사에 따른 간격 조정
-              SizedBox(height: viewModel.isNicknameValid ? 0 : 8), // 유효할 경우 간격 0, 아닐 경우 8로 설정
-
-              if (!viewModel.isNicknameValid) // 닉네임 유효성 검사 메시지
+              // 닉네임 에러 메시지 영역 제거
+              if (viewModel.nickname.isNotEmpty && !viewModel.isNicknameValid) // 유효하지 않은 경우만 표시
                 Padding(
                   padding: const EdgeInsets.only(top: 4.0, bottom: 4.0),
                   child: Text(
@@ -245,18 +243,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ],
               ),
 
-              // 이메일 발송 버튼과 유효성 검사 메시지를 같은 행에 묶기
+              // 이메일 발송 버튼과 유효성 검사 메시지를 분리하여 각각 왼쪽, 오른쪽에 배치
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  if (!viewModel.isEmailValid) // 이메일 유효성 검사 메시지
-                    Padding(
+                  // 이메일 유효성 검사 메시지
+                  Expanded(
+                    child: Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
-                        viewModel.emailErrorMessage,
+                        (!viewModel.isEmailValid &&
+                            (_localPartController.text.isNotEmpty || _domainController.text.isNotEmpty))
+                            ? viewModel.emailErrorMessage
+                            : '', // 에러 메시지가 있을 때만 표시
                         style: TextStyle(color: Colors.red),
                       ),
                     ),
+                  ),
+                  // 발송 버튼
                   ElevatedButton(
                     onPressed: viewModel.isEmailValid && !viewModel.isEmailSent
                         ? () {
@@ -267,7 +271,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 ],
               ),
-
 
               SizedBox(height: 8),
 
