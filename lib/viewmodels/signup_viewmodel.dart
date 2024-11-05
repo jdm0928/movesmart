@@ -19,13 +19,25 @@ class SignUpViewModel extends ChangeNotifier {
   bool isEmailSent = false; // 이메일 인증 발송 여부
   Timer? _timer; // 인증 메일 유효 시간 타이머
 
-  // 비밀번호 가시성 관련 변수
+  // 비밀번호 관련 변수
   bool isPasswordVisible = false; // 비밀번호 가시성 상태
   String password = ''; // 비밀번호 변수 추가
+  String confirmPassword = ''; // 비밀번호 확인 변수 추가
+  bool isPasswordMatch = false; // 비밀번호 일치 여부
+  Color passwordStrengthColor = Colors.black; // 초기 색상
+  String passwordStrengthMessage = '최소 8자 이상 작성해주세요.'; // 초기 메시지
+  double passwordStrengthValue = 0.0; // 비밀번호 강도 값 (0.0 ~ 1.0)
+
+  // 서비스 정책 체크 변수
+  bool isTermsAccepted = false; // 서비스 이용약관 동의 여부
+  bool isPrivacyAccepted = false; // 개인정보 처리 방침 동의 여부
+  bool isMarketingAccepted = false; // 마케팅 수신 동의 여부
+  bool isAllAgreed = false; // 모든 이용 약관 동의 여부
 
   // 닉네임 입력 처리
   void onNicknameChanged(String value) {
     nickname = value;
+    isNicknameValid = value.isNotEmpty; // 입력된 값이 있을 경우 유효하다고 설정
 
     // 기본 유효성 검사
     if (nickname.isEmpty) {
@@ -53,21 +65,27 @@ class SignUpViewModel extends ChangeNotifier {
     notifyListeners(); // UI 업데이트
   }
 
-  // 이메일 입력 처리
-  void onEmailChanged(String value) {
-    email = value;
+  // 이메일 입력 처리 (로컬과 도메인 부분)
+  void onEmailChanged(String localPart, String domain) {
+    email = '$localPart@$domain'; // 이메일을 로컬과 도메인으로 조합
 
-    // 이메일 형식 유효성 검사
-    if (RegExp(r'^[a-zA-Z0-9._%+-]{1,20}@[a-zA-Z0-9.-]{1,30}\.[a-zA-Z]{2,}$').hasMatch(email)) {
-      isEmailValid = true;
-      emailErrorMessage = '';
-      // 발송 버튼 활성화 조건 체크
-      if (!isEmailSent) {
-        checkEmailInUse(email);
-      }
-    } else {
+    // 이메일이 비어 있는 경우 에러 메시지 초기화
+    if (email.isEmpty) {
       isEmailValid = false;
-      emailErrorMessage = '이메일 주소를 확인해주세요.';
+      emailErrorMessage = ''; // 비어 있을 때 에러 메시지 제거
+    } else {
+      // 이메일 형식 유효성 검사
+      if (RegExp(r'^[a-zA-Z0-9._%+-]{1,20}@[a-zA-Z0-9.-]{1,30}\.[a-zA-Z]{2,}$').hasMatch(email)) {
+        isEmailValid = true;
+        emailErrorMessage = '';
+        // 발송 버튼 활성화 조건 체크
+        if (!isEmailSent) {
+          checkEmailInUse(email);
+        }
+      } else {
+        isEmailValid = false;
+        emailErrorMessage = '이메일 주소를 확인해주세요.';
+      }
     }
     notifyListeners();
   }
@@ -121,18 +139,91 @@ class SignUpViewModel extends ChangeNotifier {
     });
   }
 
-  // 이메일 초기화 메서드
-  void clearEmail() {
-    email = '';
-    isEmailValid = false;
-    emailErrorMessage = '';
-    isEmailSent = false;
+  // 비밀번호 복잡성 체크
+  void checkPasswordComplexity() {
+    if (password.isEmpty || password.length < 8) {
+      passwordStrengthColor = Colors.red;
+      passwordStrengthMessage = '최소 8자 이상 작성해주세요.';
+      passwordStrengthValue = 0; // 게이지 바 초기화
+    } else if (password.length < 10) {
+      // 8자 이상 10자 미만
+      bool hasLetter = RegExp(r'[a-zA-Z]').hasMatch(password);
+      bool hasDigit = RegExp(r'\d').hasMatch(password);
+      bool hasSpecialChar = RegExp(r'[@$!%*?&]').hasMatch(password);
+
+      if (!(hasLetter && hasDigit && hasSpecialChar)) {
+        passwordStrengthColor = Colors.red;
+        passwordStrengthMessage = '비밀번호 안정성: 미흡';
+        passwordStrengthValue = 1 / 3; // 1/3 채움
+      } else {
+        passwordStrengthColor = Colors.blue;
+        passwordStrengthMessage = '비밀번호 안정성: 양호';
+        passwordStrengthValue = 2 / 3; // 2/3 채움
+      }
+    } else {
+      // 10자 이상
+      bool hasUpperCase = RegExp(r'[A-Z]').hasMatch(password);
+      bool hasLowerCase = RegExp(r'[a-z]').hasMatch(password);
+      bool hasDigit = RegExp(r'\d').hasMatch(password);
+      bool hasSpecialChar = RegExp(r'[@$!%*?&]').hasMatch(password);
+
+      if (hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar) {
+        passwordStrengthColor = Colors.green;
+        passwordStrengthMessage = '비밀번호 안정성: 강력';
+        passwordStrengthValue = 1.0; // 3/3 채움
+      } else {
+        passwordStrengthColor = Colors.blue;
+        passwordStrengthMessage = '비밀번호 안정성: 양호';
+        passwordStrengthValue = 2 / 3; // 2/3 채움
+      }
+    }
+    notifyListeners();
+  }
+
+  // 비밀번호 확인 체크
+  void checkPasswordMatch() {
+    isPasswordMatch = (password == confirmPassword);
+    notifyListeners();
+  }
+
+  // 비밀번호 초기화 메서드
+  void clearPassword() {
+    password = '';
+    checkPasswordComplexity(); // 비밀번호 복잡성 재확인
+    notifyListeners();
+  }
+
+  // 회원가입 가능 여부 체크
+  bool get canSignUp {
+    return isEmailValid && nickname.isNotEmpty && password.length >= 9
+        && isPasswordMatch && isTermsAccepted && isPrivacyAccepted;
+  }
+
+  // 서비스 정책 체크
+  void toggleTermsAcceptance() {
+    isTermsAccepted = !isTermsAccepted;
+    notifyListeners();
+  }
+
+  void togglePrivacyAcceptance() {
+    isPrivacyAccepted = !isPrivacyAccepted;
+    notifyListeners();
+  }
+
+  void toggleMarketingAcceptance() {
+    isMarketingAccepted = !isMarketingAccepted;
+    notifyListeners();
+  }
+
+  // 모든 이용 약관 동의 체크
+  void toggleAllAgreements() {
+    isAllAgreed = !isAllAgreed;
     notifyListeners();
   }
 
   // 회원가입 처리 메서드
   Future<void> signUp() async {
-    if (isEmailValid && nickname.isNotEmpty && password.isNotEmpty) {
+    if (canSignUp) {
       try {
         UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
           email: email,
@@ -190,4 +281,5 @@ class SignUpViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
+
 
