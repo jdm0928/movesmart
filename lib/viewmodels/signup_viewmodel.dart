@@ -17,8 +17,11 @@ class SignUpViewModel extends ChangeNotifier {
   bool isEmailValid = false; // 이메일 유효성
   String emailErrorMessage = '';
   bool isEmailSent = false; // 이메일 인증 발송 여부
+  bool isEmailConfirmed = false; // 이메일 인증 완료 여부
   Timer? _timer; // 인증 메일 유효 시간 타이머
   DateTime? verificationRequestTime; // 인증 요청 시간
+  String verificationMessage = ''; // 인증 관련 메시지
+  bool canResend = true; // 재발송 버튼 쿨타임 관리
 
   // 비밀번호 관련 변수
   bool isPasswordVisible = false; // 비밀번호 가시성 상태
@@ -71,15 +74,12 @@ class SignUpViewModel extends ChangeNotifier {
     if (email.isEmpty) {
       isEmailValid = false;
       emailErrorMessage = ''; // 비어 있을 때 에러 메시지 제거
+      isEmailSent = false; // 이메일이 비어 있으면 발송 버튼 비활성화
     } else {
       // 이메일 형식 유효성 검사
       if (RegExp(r'^[a-zA-Z0-9._%+-]{1,20}@[a-zA-Z0-9.-]{1,30}\.[a-zA-Z]{2,}$').hasMatch(email)) {
         isEmailValid = true;
         emailErrorMessage = '';
-        // 발송 버튼 활성화 조건 체크
-        if (!isEmailSent) {
-          checkEmailInUse(email);
-        }
       } else {
         isEmailValid = false;
         emailErrorMessage = '이메일 주소를 확인해주세요.';
@@ -95,11 +95,13 @@ class SignUpViewModel extends ChangeNotifier {
         if (methods.isNotEmpty) {
           isEmailValid = false;
           emailErrorMessage = '이미 사용 중인 이메일 주소입니다.';
+          isEmailSent = false; // 중복된 이메일의 경우 인증 발송 버튼 비활성화
         } else {
           isEmailValid = true;
           emailErrorMessage = '';
+          // 발송 버튼 활성화
+          notifyListeners();
         }
-        notifyListeners();
       });
     } catch (e) {
       emailErrorMessage = '이메일 확인 중 오류가 발생했습니다.';
@@ -112,7 +114,7 @@ class SignUpViewModel extends ChangeNotifier {
     if (isEmailValid && email.isNotEmpty) {
       try {
         final actionCodeSettings = ActionCodeSettings(
-          url: 'https://example.com', // 인증 후 리디렉션 URL
+          url: 'https://jdm0928.github.io/movesmart?email=${Uri.encodeComponent(email)}', // 인증 후 리디렉션 URL
           handleCodeInApp: true, // 앱 내에서 처리할지 여부
         );
 
@@ -120,10 +122,10 @@ class SignUpViewModel extends ChangeNotifier {
         await _auth.sendSignInLinkToEmail(email: email, actionCodeSettings: actionCodeSettings);
         isEmailSent = true;
         verificationRequestTime = DateTime.now(); // 인증 요청 시간 기록
-        emailErrorMessage = '입력하신 이메일 주소로 인증 메일을 보내드렸습니다. 메일함을 확인해주세요.';
+        verificationMessage = '입력하신 이메일 주소로 인증 메일을 보내드렸습니다. 메일함을 확인해주세요.';
         startTimer(); // 인증 메일 유효 시간 시작
       } catch (e) {
-        emailErrorMessage = '인증 메일 발송 중 오류가 발생했습니다.';
+        verificationMessage = '인증 메일 발송 중 오류가 발생했습니다.';
       }
       notifyListeners();
     }
@@ -131,20 +133,37 @@ class SignUpViewModel extends ChangeNotifier {
 
   // 인증 메일 유효 시간 타이머 시작
   void startTimer() {
+    _timer?.cancel(); // 이전 타이머 취소
     _timer = Timer(Duration(minutes: 3), () {
       isEmailSent = false;
-      emailErrorMessage = '인증 메일의 유효 기간이 만료되었습니다. 인증 메일을 재발송 해주세요.';
+      verificationMessage = '인증 메일의 유효 기간이 만료되었습니다. 인증 메일을 재발송 해주세요.';
       notifyListeners();
     });
   }
 
-// 인증 링크 클릭 시 유효 시간 체크
-  bool isVerificationLinkValid() {
-    if (verificationRequestTime != null) {
-      final currentTime = DateTime.now();
-      return currentTime.difference(verificationRequestTime!).inMinutes < 3; // 3분 이내인지 체크
+  // 재발송 처리
+  Future<void> resendVerificationEmail() async {
+    if (canResend && isEmailValid && email.isNotEmpty) {
+      canResend = false; // 쿨타임 시작
+      verificationMessage = ''; // 이전 메시지 초기화
+      await sendVerificationEmail(); // 이메일 재발송
+
+      // 쿨타임 설정
+      Timer(Duration(seconds: 10), () {
+        canResend = true; // 쿨타임 해제
+        notifyListeners();
+      });
     }
-    return false; // 요청 시간이 없다면 유효하지 않음
+  }
+
+  // 인증 성공 처리
+  void confirmEmailVerification() {
+    isEmailConfirmed = true;
+    verificationMessage = '인증되었습니다.'; // 인증 완료 메시지
+    email = ''; // 이메일 입력 비활성화
+    isEmailValid = false; // 이메일 수정 불가
+    isEmailSent = false; // 이메일 발송 버튼 비활성화
+    notifyListeners();
   }
 
   // 비밀번호 복잡성 체크
