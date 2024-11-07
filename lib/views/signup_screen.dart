@@ -252,10 +252,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     child: Padding(
                       padding: const EdgeInsets.only(top: 8.0),
                       child: Text(
+                        // 메시지가 표시되는 조건을 수정
                         (!viewModel.isEmailValid &&
                             (_localPartController.text.isNotEmpty || _domainController.text.isNotEmpty))
                             ? viewModel.emailErrorMessage
-                            : '', // 에러 메시지가 있을 때만 표시
+                            : '', // 조건에 따라 메시지를 표시하거나 빈 문자열 반환
                         style: TextStyle(color: Colors.red),
                       ),
                     ),
@@ -267,7 +268,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       viewModel.sendVerificationEmail(); // 이메일 발송 함수 호출
                     }
                         : null, // 유효하지 않거나 이미 발송된 경우 비활성화
-                    child: Text('발송'),
+                    child: Text(viewModel.isEmailSent ? '재발송' : '발송'),
                   ),
                 ],
               ),

@@ -18,6 +18,7 @@ class SignUpViewModel extends ChangeNotifier {
   String emailErrorMessage = '';
   bool isEmailSent = false; // 이메일 인증 발송 여부
   Timer? _timer; // 인증 메일 유효 시간 타이머
+  DateTime? verificationRequestTime; // 인증 요청 시간
 
   // 비밀번호 관련 변수
   bool isPasswordVisible = false; // 비밀번호 가시성 상태
@@ -111,13 +112,14 @@ class SignUpViewModel extends ChangeNotifier {
     if (isEmailValid && email.isNotEmpty) {
       try {
         final actionCodeSettings = ActionCodeSettings(
-          url: 'https://5a2a-61-253-40-30.ngrok-free.app', // 인증 후 리디렉션 URL
+          url: 'https://example.com', // 인증 후 리디렉션 URL
           handleCodeInApp: true, // 앱 내에서 처리할지 여부
         );
 
-        // 이메일 인증 링크 발송
+        // 인증 메일 발송
         await _auth.sendSignInLinkToEmail(email: email, actionCodeSettings: actionCodeSettings);
         isEmailSent = true;
+        verificationRequestTime = DateTime.now(); // 인증 요청 시간 기록
         emailErrorMessage = '입력하신 이메일 주소로 인증 메일을 보내드렸습니다. 메일함을 확인해주세요.';
         startTimer(); // 인증 메일 유효 시간 시작
       } catch (e) {
@@ -134,6 +136,15 @@ class SignUpViewModel extends ChangeNotifier {
       emailErrorMessage = '인증 메일의 유효 기간이 만료되었습니다. 인증 메일을 재발송 해주세요.';
       notifyListeners();
     });
+  }
+
+// 인증 링크 클릭 시 유효 시간 체크
+  bool isVerificationLinkValid() {
+    if (verificationRequestTime != null) {
+      final currentTime = DateTime.now();
+      return currentTime.difference(verificationRequestTime!).inMinutes < 3; // 3분 이내인지 체크
+    }
+    return false; // 요청 시간이 없다면 유효하지 않음
   }
 
   // 비밀번호 복잡성 체크
