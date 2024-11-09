@@ -98,14 +98,15 @@ class LoginScreen extends StatelessWidget {
                     // 카카오 로그인 버튼
                     ElevatedButton(
                       onPressed: () {
-                        // 카카오 로그인 로직 호출
+                        final loginViewModel = Provider.of<LoginViewModel>(context, listen: false);
+                        loginViewModel.signInWithKakao(context); // 카카오 로그인 호출
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.all(0), // 패딩을 0으로 설정
                         backgroundColor: Colors.transparent, // 배경 투명
                       ),
                       child: Container(
-                        width: 260, // 원하는 너비
+                        width: 230, // 원하는 너비
                         height: 50, // 원하는 높이
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey), // 테두리 추가
@@ -117,14 +118,15 @@ class LoginScreen extends StatelessWidget {
                     // 구글 로그인 버튼
                     ElevatedButton(
                       onPressed: () {
-                        // 구글 로그인 로직 호출
+                        final loginViewModel = Provider.of<LoginViewModel>(context, listen: false);
+                        loginViewModel.signInWithGoogle(context);
                       },
                       style: ElevatedButton.styleFrom(
-                        padding: const EdgeInsets.all(0), // 패딩을 0으로 설정
-                        backgroundColor: Colors.transparent, // 배경 투명
+                        padding: const EdgeInsets.all(0),
+                        backgroundColor: Colors.transparent,
                       ),
                       child: Container(
-                        width: 260, // 원하는 너비
+                        width: 230, // 원하는 너비
                         height: 50, // 원하는 높이
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey), // 테두리 추가
@@ -132,18 +134,21 @@ class LoginScreen extends StatelessWidget {
                         child: Image.asset('assets/android_light_sq_SI@4x.png', fit: BoxFit.fill), // 구글 로고 이미지
                       ),
                     ),
+
                     const SizedBox(height: 16), // 버튼 간격
                     // 네이버 로그인 버튼
                     ElevatedButton(
                       onPressed: () {
                         // 네이버 로그인 로직 호출
+                        final loginViewModel = Provider.of<LoginViewModel>(context, listen: false);
+                        loginViewModel.signInWithNaver(context);
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.all(0), // 패딩을 0으로 설정
                         backgroundColor: Colors.transparent, // 배경 투명
                       ),
                       child: Container(
-                        width: 260, // 원하는 너비
+                        width: 230, // 원하는 너비
                         height: 50, // 원하는 높이
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey), // 테두리 추가

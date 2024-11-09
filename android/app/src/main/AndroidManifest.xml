@@ -1,12 +1,15 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.example.movesmart">
 
-    <uses-permission android:name="android.permission.INTERNET" /> <!-- 인터넷 권한 추가 -->
-    <uses-permission android:name="android.permission.RECEIVE_SMS" /> <!-- SMS 수신 권한 추가 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
 
     <application
         android:icon="@mipmap/ic_launcher"
-        android:label="movesmart">
+        android:label="movesmart"
+        android:enableOnBackInvokedCallback="true">
+
         <activity
             android:name="com.example.movesmart.MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -20,11 +23,13 @@
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
 
-            <!-- 커스텀 URL 스킴 추가 -->
+            <!-- 기본 인텐트 필터 -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+
+            <!-- 카카오톡에서 인증 후 돌아오는 인텐트 필터 추가 -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -32,6 +37,25 @@
                 <data android:scheme="movesmart" android:host="auth" />
             </intent-filter>
         </activity>
+
+        <!-- 카카오 SDK의 인증 활동 추가 -->
+        <activity
+            android:name="com.kakao.sdk.auth.authorization.AuthCodeActivity"
+            android:exported="true"/>
+
+        <!-- 네이버 로그인 관련 설정 추가 -->
+        <meta-data
+            android:name="com.naver.sdk.client_id"
+            android:value="3iYvNE31NiesaVMSS9im"/>  <!-- 네이버에서 발급받은 Client ID -->
+        <meta-data
+            android:name="com.naver.sdk.client_secret"
+            android:value="_WL_VdKc3O"/>  <!-- 네이버에서 발급받은 Client Secret -->
+
+        <!-- 카카오 앱 키 추가 -->
+        <meta-data
+            android:name="kakao_app_key"
+            android:value="a185a267072df6495590e209e7af148b"/>
+
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />

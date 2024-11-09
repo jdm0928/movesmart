@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:kakao_flutter_sdk/all.dart'; // 카카오 SDK 불러오기
+import 'package:flutter_naver_login/flutter_naver_login.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:movesmart/views/forgot_password_screen.dart';
 import 'package:movesmart/views/forgot_username_screen.dart';
 import '../services/navigation_service.dart';
@@ -9,8 +15,9 @@ import '../views/signup_screen.dart'; // SignUpScreen 임포트 추가
 class LoginViewModel extends ChangeNotifier {
   final NavigationService _navigationService = NavigationService();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
-  // 로그인 함수
+  // 로그인 함수 (이메일/비밀번호)
   Future<void> login(BuildContext context, String username, String password) async {
     if (username.isEmpty || password.isEmpty) {
       _showError(context, '아이디와 비밀번호를 입력하세요.');
@@ -18,34 +25,178 @@ class LoginViewModel extends ChangeNotifier {
     }
 
     try {
-      // Firebase Authentication을 사용하여 로그인
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: username,
         password: password,
       );
 
-      // 로그인 성공 시 사용자 정보를 확인
       if (userCredential.user != null) {
-        // 홈 화면으로 이동
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => HomeScreen()),
-        );
+        _navigateToHome(context);
       } else {
         _showError(context, '로그인 실패');
       }
     } on FirebaseAuthException catch (e) {
-      // 로그인 실패 시 에러 메시지 표시
-      if (e.code == 'user-not-found') {
-        _showError(context, '해당 아이디가 존재하지 않습니다.');
-      } else if (e.code == 'wrong-password') {
-        _showError(context, '비밀번호가 잘못되었습니다.');
+      switch (e.code) {
+        case 'user-not-found':
+          _showError(context, '해당 아이디가 존재하지 않습니다.');
+          break;
+        case 'wrong-password':
+          _showError(context, '비밀번호가 잘못되었습니다.');
+          break;
+        default:
+          _showError(context, '로그인 실패');
+      }
+    } catch (error) {
+      _showError(context, '로그인 중 오류가 발생했습니다: $error');
+    }
+  }
+
+  // 구글 로그인 함수
+  Future<void> signInWithGoogle(BuildContext context) async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth?.accessToken,
+        idToken: googleAuth?.idToken,
+      );
+
+      UserCredential userCredential = await _auth.signInWithCredential(credential);
+      if (userCredential.user != null) {
+        _showSuccess(context, '로그인 성공');
+        _navigateToHome(context);
       } else {
         _showError(context, '로그인 실패');
       }
     } catch (error) {
-      // 다른 에러 처리
-      _showError(context, '로그인 중 오류가 발생했습니다: $error');
+      _showError(context, '구글 로그인 중 오류가 발생했습니다: $error');
     }
+  }
+
+  // 카카오 로그인 함수
+  Future<void> signInWithKakao(BuildContext context) async {
+    try {
+      final isKakaoTalkInstalled = await isKakaoTalkInstalled();
+
+      if (isKakaoTalkInstalled) {
+        // 카카오톡이 설치된 경우
+        final authCode = await AuthCodeClient.instance.request();
+        await _getKakaoUserInfo(context, authCode);
+      } else {
+        // 카카오톡이 설치되지 않은 경우 웹 로그인으로 리디렉션
+        final url = 'https://kauth.kakao.com/oauth/authorize?client_id=bdf4eb2bd5b6878725a311213e781015&redirect_uri=movesmart://auth&response_type=code';
+        await launch(url);
+      }
+    } catch (error) {
+      _showError(context, '카카오 로그인 중 오류가 발생했습니다: $error');
+    }
+  }
+
+  // 카카오톡 설치 여부 확인 함수
+  Future<bool> isKakaoTalkInstalled() async {
+    return await isKakaoTalkInstalled();
+  }
+
+  // 카카오 사용자 정보 요청
+  Future<void> _getKakaoUserInfo(BuildContext context, String authCode) async {
+    final tokenResponse = await http.post(
+      Uri.parse('https://kauth.kakao.com/oauth/token'),
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: {
+        'grant_type': 'authorization_code',
+        'client_id': 'bdf4eb2bd5b6878725a311213e781015', // REST API 키
+        'redirect_uri': 'movesmart://auth', // Redirect URI
+        'code': authCode,
+      },
+    );
+
+    if (tokenResponse.statusCode == 200) {
+      final tokenData = json.decode(tokenResponse.body);
+      final accessToken = tokenData['access_token'];
+      await _fetchKakaoUserProfile(context, accessToken);
+    } else {
+      _showError(context, '액세스 토큰 요청에 실패했습니다: ${tokenResponse.body}');
+    }
+  }
+
+  // 카카오 사용자 프로필 요청
+  Future<void> _fetchKakaoUserProfile(BuildContext context, String accessToken) async {
+    final userResponse = await http.get(
+      Uri.parse('https://kapi.kakao.com/v2/user/me'),
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    if (userResponse.statusCode == 200) {
+      final userData = json.decode(userResponse.body);
+      final nickname = userData['kakao_account']['profile']['nickname'];
+      _showSuccess(context, '로그인 성공: $nickname');
+      _navigateToHome(context);
+    } else {
+      _showError(context, '사용자 정보를 가져오는 데 실패했습니다: ${userResponse.body}');
+    }
+  }
+
+  // 네이버 로그인 함수
+  Future<void> signInWithNaver(BuildContext context) async {
+    try {
+      // 네이버 로그인 요청
+      final NaverLoginResult result = await FlutterNaverLogin.logIn();
+
+      // 액세스 토큰 가져오기
+      final NaverAccessToken accessToken = result.accessToken;
+
+      // 사용자 프로필 요청
+      await _fetchNaverUserProfile(context, accessToken.accessToken);
+    } catch (error) {
+      _showError(context, '네이버 로그인 중 오류가 발생했습니다: $error');
+    }
+  }
+
+// 네이버 사용자 프로필 요청
+  Future<void> _fetchNaverUserProfile(BuildContext context, String accessToken) async {
+    final userResponse = await http.get(
+      Uri.parse('https://openapi.naver.com/v1/nid/me'),
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+      },
+    );
+
+    if (userResponse.statusCode == 200) {
+      final userData = json.decode(userResponse.body);
+      final nickname = userData['response']['nickname']; // 사용자 닉네임
+      _showSuccess(context, '로그인 성공: $nickname');
+      _navigateToHome(context);
+    } else {
+      _showError(context, '사용자 정보를 가져오는 데 실패했습니다: ${userResponse.body}');
+    }
+  }
+
+  void setLanguageCode() {
+    FirebaseAuth.instance.setLanguageCode('ko');
+  }
+
+  // 홈 화면으로 이동하는 함수
+  void _navigateToHome(BuildContext context) {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => HomeScreen()),
+    );
+  }
+
+  // 성공 메시지 표시 함수
+  void _showSuccess(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+        margin: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 16),
+      ),
+    );
   }
 
   // 회원가입 화면으로 이동하는 함수
@@ -58,7 +209,7 @@ class LoginViewModel extends ChangeNotifier {
     _navigationService.navigateTo(context, ForgotUsernameScreen());
   }
 
-  // 아이디 찾기 화면으로 이동하는 함수
+  // 비밀번호 찾기 화면으로 이동하는 함수
   void navigateToForgotPassword(BuildContext context) {
     _navigationService.navigateTo(context, ForgotPasswordScreen());
   }

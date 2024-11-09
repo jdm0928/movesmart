@@ -39,6 +39,11 @@ android {
     }
 }
 
+dependencies {
+    implementation "com.kakao.sdk:v2-user:2.9.0" // 사용자 관련 SDK
+    implementation "com.kakao.sdk:v2-auth:2.9.0" // 인증 관련 SDK
+}
+
 flutter {
     source = "../.."
 }
