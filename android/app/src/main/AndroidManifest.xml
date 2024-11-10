@@ -28,20 +28,20 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
 
-            <!-- 카카오톡에서 인증 후 돌아오는 인텐트 필터 추가 -->
-            <intent-filter>
+        <!-- 카카오 SDK의 인증 활동 추가 -->
+        <activity
+            android:name="com.kakao.sdk.auth.authorization.AuthCodeActivity"
+            android:exported="true">
+            <intent-filter android:label="flutter_web_auth">
+                <!-- 카카오톡에서 인증 후 돌아오는 인텐트 필터 추가 -->
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="movesmart" android:host="auth" />
             </intent-filter>
         </activity>
-
-        <!-- 카카오 SDK의 인증 활동 추가 -->
-        <activity
-            android:name="com.kakao.sdk.auth.authorization.AuthCodeActivity"
-            android:exported="true"/>
 
         <!-- 네이버 로그인 관련 설정 추가 -->
         <meta-data
