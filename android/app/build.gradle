@@ -13,19 +13,19 @@ android {
     compileSdk = 34 // 또는 사용하고 있는 최신 Flutter SDK에 맞게 조정
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = '17'
     }
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.example.movesmart"
-        minSdk = 23 // 이 값을 23으로 변경
-        targetSdk = 34 // 또는 사용하고 있는 최신 Flutter SDK에 맞게 조정
+        minSdk = 24 //
+        targetSdk = 34 //
         versionCode = 1 // 원하는 버전 코드
         versionName = "1.0" // 원하는 버전 이름
     }

@@ -2,7 +2,7 @@ import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-// import 'package:kakao_flutter_sdk/all.dart'; // 카카오 SDK 불러오기
+//import 'package:kakao_flutter_sdk/all.dart'; // 카카오 SDK 불러오기
 import 'package:flutter_naver_login/flutter_naver_login.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
