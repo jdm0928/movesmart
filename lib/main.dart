@@ -9,8 +9,14 @@ import 'viewmodels/login_viewmodel.dart'; // LoginViewModel import
 import 'viewmodels/signup_viewmodel.dart'; // SignUpViewModel import
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized(); // Flutter가 초기화되도록 함
-  await Firebase.initializeApp( // Firebase 초기화
+  WidgetsFlutterBinding.ensureInitialized();
+  // Kakao 초기화
+  // KaKaoSdk.init(
+  //   nativeAppkey: ''
+  // );
+
+  // Firebase 초기화
+  await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
   runApp(const MyApp()); // 앱 실행

@@ -18,6 +18,7 @@ allprojects {
         google()
         mavenCentral()
         maven { url 'https://devrepo.kakao.com/nexus/content/groups/public/' } // 카카오 Maven 저장소 추가
+//        maven { url 'https://maven.naver.com' }  // 네이버 SDK의 Maven Repository 추가
     }
 }
 

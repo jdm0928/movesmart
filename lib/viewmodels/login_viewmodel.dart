@@ -1,21 +1,25 @@
-import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-// import 'package:kakao_flutter_sdk/all.dart'; // 카카오 SDK 불러오기
-import 'package:flutter_naver_login/flutter_naver_login.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-import 'package:movesmart/views/forgot_password_screen.dart';
-import 'package:movesmart/views/forgot_username_screen.dart';
-import '../services/navigation_service.dart';
-import '../views/home_screen.dart';
-import '../views/signup_screen.dart'; // SignUpScreen 임포트 추가
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth; // Firebase 인증
+import 'package:firebase_database/firebase_database.dart'; // Firebase Realtime Database
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
+import 'package:google_sign_in/google_sign_in.dart'; // 구글 로그인
+import 'package:flutter_naver_login/flutter_naver_login.dart'; // 네이버 로그인
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart' as kakao; // 카카오 로그인
+import 'package:http/http.dart' as http; // HTTP 요청
+import 'dart:convert'; // JSON 데이터 처리
+import 'package:url_launcher/url_launcher.dart'; // URL 열기
+import 'package:flutter/material.dart'; // Flutter UI
+import '../views/forgot_password_screen.dart'; // 비밀번호 찾기 화면
+import '../views/forgot_username_screen.dart'; // 아이디 찾기 화면
+import '../views/home_screen.dart'; // 홈 화면
+import '../views/signup_screen.dart'; // 회원가입 화면
+import '../services/navigation_service.dart'; // 네비게이션 서비스
+
 
 class LoginViewModel extends ChangeNotifier {
   final NavigationService _navigationService = NavigationService();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   // 로그인 함수 (이메일/비밀번호)
@@ -26,7 +30,7 @@ class LoginViewModel extends ChangeNotifier {
     }
 
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
+      firebase_auth.UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: username,
         password: password,
       );
@@ -36,7 +40,7 @@ class LoginViewModel extends ChangeNotifier {
       } else {
         _showError(context, '로그인 실패');
       }
-    } on FirebaseAuthException catch (e) {
+    } on firebase_auth.FirebaseAuthException catch (e) {
       switch (e.code) {
         case 'user-not-found':
           _showError(context, '해당 아이디가 존재하지 않습니다.');
@@ -53,11 +57,27 @@ class LoginViewModel extends ChangeNotifier {
   }
 
   void setLanguageCode() {
-    FirebaseAuth.instance.setLanguageCode('ko');
+    firebase_auth.FirebaseAuth.instance.setLanguageCode('ko');
+  }
+
+  // 이미지 선택 및 업로드 함수
+  Future<String?> uploadProfileImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedFile != null) {
+      String filePath = 'profile_images/${pickedFile.name}';
+      FirebaseStorage storage = FirebaseStorage.instance;
+      File file = File(pickedFile.path);
+      await storage.ref(filePath).putFile(file);
+      String downloadURL = await storage.ref(filePath).getDownloadURL();
+      return downloadURL; // 이 URL을 Realtime Database에 저장
+    }
+    return null;
   }
 
   /// Firebase에 사용자 정보 저장 함수
-  Future<void> _saveUserToDatabase(User? user, String nickname, String email, String profileImage) async {
+  Future<void> _saveUserToDatabase(firebase_auth.User? user, String nickname, String email, String profileImage) async {
     if (user == null) return;
 
     final userId = user.uid;
@@ -68,7 +88,6 @@ class LoginViewModel extends ChangeNotifier {
       'marketingConsent': false, // 기본값 설정
     };
 
-    // Realtime Database에 사용자 정보 저장
     DatabaseReference ref = FirebaseDatabase.instance.ref('users/$userId');
     await ref.set(userData);
   }
@@ -79,15 +98,15 @@ class LoginViewModel extends ChangeNotifier {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
       final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
 
-      final AuthCredential credential = GoogleAuthProvider.credential(
+      final firebase_auth.AuthCredential credential = firebase_auth.GoogleAuthProvider.credential(
         accessToken: googleAuth?.accessToken,
         idToken: googleAuth?.idToken,
       );
 
-      UserCredential userCredential = await _auth.signInWithCredential(credential);
+      firebase_auth.UserCredential userCredential = await _auth.signInWithCredential(credential);
       if (userCredential.user != null) {
-        // 사용자 정보를 Firebase Realtime Database에 저장
-        await _saveUserToDatabase(userCredential.user, googleUser?.displayName ?? '', googleUser?.email ?? '', googleUser?.photoUrl ?? '');
+        String? profileImageUrl = await uploadProfileImage();
+        await _saveUserToDatabase(userCredential.user, googleUser?.displayName ?? '', googleUser?.email ?? '', profileImageUrl ?? googleUser?.photoUrl ?? '');
         _showSuccess(context, '로그인 성공');
         _navigateToHome(context);
       } else {
@@ -99,84 +118,79 @@ class LoginViewModel extends ChangeNotifier {
   }
 
   /// 카카오 로그인 함수
-  // Future<void> signInWithKakao(BuildContext context) async {
-  //   try {
-  //     final isKakaoTalkInstalled = await isKakaoTalkInstalled();
-  //
-  //     String authCode;
-  //     if (isKakaoTalkInstalled) {
-  //       // 카카오톡이 설치된 경우
-  //       authCode = await AuthCodeClient.instance.request();
-  //     } else {
-  //       // 카카오톡이 설치되지 않은 경우 웹 로그인으로 리디렉션
-  //       final url = 'https://kauth.kakao.com/oauth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=movesmart://auth&response_type=code';
-  //       await launch(url);
-  //       return; // 웹 로그인으로 리디렉션하므로 여기서 종료
-  //     }
-  //
-  //     // Kakao 사용자 정보 요청
-  //     final tokenResponse = await http.post(
-  //       Uri.parse('https://kauth.kakao.com/oauth/token'),
-  //       headers: {
-  //         'Content-Type': 'application/x-www-form-urlencoded',
-  //       },
-  //       body: {
-  //         'grant_type': 'authorization_code',
-  //         'client_id': 'YOUR_CLIENT_ID', // REST API 키
-  //         'redirect_uri': 'movesmart://auth', // Redirect URI
-  //         'code': authCode,
-  //       },
-  //     );
-  //
-  //     if (tokenResponse.statusCode == 200) {
-  //       final tokenData = json.decode(tokenResponse.body);
-  //       final accessToken = tokenData['access_token'];
-  //
-  //       final userResponse = await http.get(
-  //         Uri.parse('https://kapi.kakao.com/v2/user/me'),
-  //         headers: {
-  //           'Authorization': 'Bearer $accessToken',
-  //         },
-  //       );
-  //
-  //       if (userResponse.statusCode == 200) {
-  //         final userData = json.decode(userResponse.body);
-  //         final nickname = userData['kakao_account']['profile']['nickname'];
-  //         final email = userData['kakao_account']['email'];
-  //         final profileImage = userData['kakao_account']['profile']['profile_image'];
-  //
-  //         // Firebase에서 사용자 인증
-  //         final credential = GoogleAuthProvider.credential(
-  //           accessToken: accessToken,
-  //           idToken: null, // 카카오는 ID 토큰이 없음
-  //         );
-  //         UserCredential userCredential = await _auth.signInWithCredential(credential);
-  //
-  //         // Firebase에 사용자 정보 저장
-  //         await _saveUserToDatabase(userCredential.user, nickname, email, profileImage);
-  //         _showSuccess(context, '로그인 성공: $nickname');
-  //         _navigateToHome(context);
-  //       } else {
-  //         _showError(context, '사용자 정보를 가져오는 데 실패했습니다: ${userResponse.body}');
-  //       }
-  //     } else {
-  //       _showError(context, '액세스 토큰 요청에 실패했습니다: ${tokenResponse.body}');
-  //     }
-  //   } catch (error) {
-  //     _showError(context, '카카오 로그인 중 오류가 발생했습니다: $error');
-  //   }
-  // }
+  Future<void> signInWithKakao(BuildContext context) async {
+    try {
+      final bool isKakaoTalkInstalled = await kakao.isKakaoTalkInstalled();
+      String authCode;
+
+      if (isKakaoTalkInstalled) {
+        authCode = await kakao.AuthCodeClient.instance.request();
+      } else {
+        final url = 'https://kauth.kakao.com/oauth/authorize?'
+            'client_id=YOUR_CLIENT_ID&'
+            'redirect_uri=movesmart://auth&'
+            'response_type=code';
+        await launch(url);
+        return; // 웹 로그인으로 리디렉션하므로 여기서 종료
+      }
+
+      final tokenResponse = await http.post(
+        Uri.parse('https://kauth.kakao.com/oauth/token'),
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {
+          'grant_type': 'authorization_code',
+          'client_id': 'YOUR_CLIENT_ID',
+          'redirect_uri': 'movesmart://auth',
+          'code': authCode,
+        },
+      );
+
+      if (tokenResponse.statusCode == 200) {
+        final tokenData = json.decode(tokenResponse.body);
+        final accessToken = tokenData['access_token'];
+
+        final userResponse = await http.get(
+          Uri.parse('https://kapi.kakao.com/v2/user/me'),
+          headers: {
+            'Authorization': 'Bearer $accessToken',
+          },
+        );
+
+        if (userResponse.statusCode == 200) {
+          final userData = json.decode(userResponse.body);
+          final nickname = userData['kakao_account']['profile']['nickname'];
+          final email = userData['kakao_account']['email'];
+          final profileImage = userData['kakao_account']['profile']['profile_image'];
+
+          String? profileImageUrl = await uploadProfileImage();
+          final credential = firebase_auth.GoogleAuthProvider.credential(
+            accessToken: accessToken,
+            idToken: null, // 카카오는 ID 토큰이 없음
+          );
+          firebase_auth.UserCredential userCredential = await _auth.signInWithCredential(credential);
+
+          await _saveUserToDatabase(userCredential.user, nickname, email, profileImageUrl ?? profileImage);
+          _showSuccess(context, '로그인 성공: $nickname');
+          _navigateToHome(context);
+        } else {
+          _showError(context, '사용자 정보를 가져오는 데 실패했습니다: ${userResponse.body}');
+        }
+      } else {
+        _showError(context, '액세스 토큰 요청에 실패했습니다: ${tokenResponse.body}');
+      }
+    } catch (error) {
+      _showError(context, '카카오 로그인 중 오류가 발생했습니다: $error');
+    }
+  }
 
   /// 네이버 로그인 함수
   Future<void> signInWithNaver(BuildContext context) async {
     try {
-      // 네이버 로그인 요청
       final NaverLoginResult result = await FlutterNaverLogin.logIn();
-
-      // 액세스 토큰 가져오기
       final NaverAccessToken accessToken = result.accessToken;
 
-      // 사용자 프로필 요청
       final userResponse = await http.get(
         Uri.parse('https://openapi.naver.com/v1/nid/me'),
         headers: {
@@ -186,19 +200,18 @@ class LoginViewModel extends ChangeNotifier {
 
       if (userResponse.statusCode == 200) {
         final userData = json.decode(userResponse.body);
-        final nickname = userData['response']['nickname']; // 사용자 닉네임
-        final email = userData['response']['email']; // 사용자 이메일
-        final profileImage = userData['response']['profile_image']; // 프로필 이미지 URL
+        final nickname = userData['response']['nickname'];
+        final email = userData['response']['email'];
+        final profileImage = userData['response']['profile_image'];
 
-        // Firebase에서 사용자 인증
-        final credential = GoogleAuthProvider.credential(
+        final credential = firebase_auth.GoogleAuthProvider.credential(
           accessToken: accessToken.tokenType + ' ' + accessToken.accessToken,
-          idToken: null, // 네이버도 ID 토큰이 없음
+          idToken: null,
         );
-        UserCredential userCredential = await _auth.signInWithCredential(credential);
+        firebase_auth.UserCredential userCredential = await _auth.signInWithCredential(credential);
 
-        // Firebase에 사용자 정보 저장
-        await _saveUserToDatabase(userCredential.user, nickname, email, profileImage);
+        String? profileImageUrl = await uploadProfileImage();
+        await _saveUserToDatabase(userCredential.user, nickname, email, profileImageUrl ?? profileImage);
         _showSuccess(context, '로그인 성공: $nickname');
         _navigateToHome(context);
       } else {
@@ -254,3 +267,8 @@ class LoginViewModel extends ChangeNotifier {
     );
   }
 }
+
+extension on kakao.AuthCodeClient {
+  request() {}
+}
+

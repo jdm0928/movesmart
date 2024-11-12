@@ -11,11 +11,13 @@ dependencies:
   flutter:
     sdk: flutter
   provider: ^6.1.2
-  firebase_core: ^3.6.0 # Firebase Core 패키지
-  firebase_auth: ^5.3.1 # Firebase Authentication 패키지
-  firebase_database: ^11.1.4 # Firebase Realtime Database 패키지
+  firebase_core: ^3.6.0 # Firebase Core
+  firebase_auth: ^5.3.1 # Firebase Authentication
+  firebase_database: ^11.1.4 # Firebase Realtime Database
+  firebase_storage: ^12.3.5 # Firebase Storage
+  image_picker: ^1.1.2
   google_sign_in: ^6.2.2 # Google Login
-  google_maps_flutter: ^2.9.0
+  google_maps_flutter: ^2.9.0 # Google Map
   kakao_flutter_sdk: ^1.9.6 # Kakao Login
   flutter_naver_login: ^2.0.0 # Naver Login
   url_launcher: ^6.3.1
