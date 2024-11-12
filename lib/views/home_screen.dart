@@ -45,19 +45,33 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             ListTile(
-              leading: const Icon(Icons.settings),
-              title: const Text('프로필 설정'),
+              leading: const Icon(Icons.person),
+              title: const Text('프로필'),
               onTap: () {
-                // 프로필 설정 화면으로 이동하는 로직 추가
+                // 프로필 화면으로 이동하는 로직 추가
               },
             ),
             ListTile(
-              leading: const Icon(Icons.logout),
-              title: const Text('로그아웃'),
-              onTap: () async {
-                await _viewModel.logout(context); // ViewModel의 로그아웃 호출
+              leading: const Icon(Icons.settings),
+              title: const Text('설정'),
+              onTap: () {
+                // 설정 화면으로 이동하는 로직 추가
               },
             ),
+            ListTile(
+              leading: const Icon(Icons.help),
+              title: const Text('도움말'),
+              onTap: () {
+                // 도움말 화면으로 이동하는 로직 추가
+              },
+            ),
+            // ListTile(
+            //   leading: const Icon(Icons.logout),
+            //   title: const Text('로그아웃'),
+            //   onTap: () async {
+            //     await _viewModel.logout(context); // ViewModel의 로그아웃 호출
+            //   },
+            // ),
           ],
         ),
       ),

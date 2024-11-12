@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth 임포트
-import '../views/login_screen.dart'; // 로그인 화면 임포트
-import '../views/pathfinding_screen.dart'; // 길찾기 화면 임포트
-import '../views/navigation_screen.dart'; // 주행 내비 화면 임포트
-import '../views/translation_screen.dart'; // 번역기 화면 임포트
-import '../views/weather_screen.dart'; // 날씨 예보 화면 임포트
+import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth
+import '../views/login_screen.dart'; // 로그인 화면
+import '../views/pathfinding_screen.dart'; // 길찾기 화면
+import '../views/navigation_screen.dart'; // 주행 내비 화면
+import '../views/profile_setting_screen.dart'; // 프로필 설정 화면
+import '../views/translation_screen.dart'; // 번역기 화면
+import '../views/weather_screen.dart'; // 날씨 예보 화면
 
 class HomeViewModel {
   // 로그아웃 기능
@@ -40,6 +41,13 @@ class HomeViewModel {
   void navigateToWeather(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => WeatherScreen()), // 날씨 예보 화면으로 이동
+    );
+  }
+
+  // 프로필 설정 화면으로 이동
+  void navigateToProfileSettings(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => ProfileSettingsScreen()), // 프로필 설정 화면으로 이동
     );
   }
 }

@@ -35,13 +35,16 @@ android {
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.debug
+            minifyEnabled true // R8 활성화
+            shrinkResources true // 리소스 축소 활성화
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
 
 dependencies {
-    implementation "com.kakao.sdk:v2-user:2.9.0" // 사용자 관련 SDK
-    implementation "com.kakao.sdk:v2-auth:2.9.0" // 인증 관련 SDK
+    implementation "com.kakao.sdk:v2-user:2.10.0" // 사용자 관련 SDK
+    implementation "com.kakao.sdk:v2-auth:2.10.0" // 인증 관련 SDK
 }
 
 flutter {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart'; // Firebase Core 패키지 임포트
+import 'package:movesmart/viewmodels/pathfinding_viewmodel.dart';
 import 'package:provider/provider.dart'; // Provider 패키지 임포트
 import 'services/firebase_options.dart'; // Firebase 설정 파일 임포트
 import 'views/splash_screen.dart'; // SplashScreen import
@@ -25,6 +26,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => SplashViewModel()), // SplashViewModel 제공
         ChangeNotifierProvider(create: (_) => LoginViewModel()), // LoginViewModel 제공
         ChangeNotifierProvider(create: (_) => SignUpViewModel()), // SignUpViewModel 제공
+        ChangeNotifierProvider(create: (_) => PathfindingViewModel()), // PathfindingViewModel 제공
       ],
       child: MaterialApp(
         title: 'Flutter Demo',
