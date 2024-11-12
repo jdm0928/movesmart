@@ -52,7 +52,7 @@
             android:value="YOUR_API_KEY_HERE"/>  <!-- 네이버에서 발급받은 Client ID -->
         <meta-data
             android:name="com.naver.sdk.client_secret"
-            android:value="_WL_VdKc3O"/>  <!-- 네이버에서 발급받은 Client Secret -->
+            android:value="YOUR_API_KEY_HERE"/>  <!-- 네이버에서 발급받은 Client Secret -->
 
         <!-- 카카오 앱 키 추가 -->
         <meta-data
