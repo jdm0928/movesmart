@@ -13,30 +13,6 @@
         android:label="movesmart"
         android:enableOnBackInvokedCallback="true">
 
-        <!-- 카카오 SDK의 인증 활동 추가 -->
-        <activity
-            android:name="com.kakao.sdk.flutter.AuthCodeCustomTabsActivity"
-            android:exported="true">
-            <intent-filter android:label="flutter_web_auth">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme='kakao@string/kakao_app_key' android:host="oauth" />
-            </intent-filter>
-        </activity>
-
-        <!-- 네이버 로그인 Activity 추가 -->
-        <activity
-            android:name="com.naver.sdk.auth.NidOAuthBridgeActivity"
-            android:exported="true">
-            <intent-filter android:label="NaverLogin">
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="movesmart" android:host="auth" />
-            </intent-filter>
-        </activity>
-
         <activity
             android:name="com.example.movesmart.MainActivity"
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
@@ -50,32 +26,43 @@
                 android:name="io.flutter.embedding.android.NormalTheme"
                 android:resource="@style/NormalTheme" />
 
+            <!-- 기본 인텐트 필터 -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
+        <!-- 카카오 SDK의 인증 활동 추가 -->
+        <activity
+            android:name="com.kakao.sdk.auth.authorization.AuthCodeActivity"
+            android:exported="true">
+            <intent-filter android:label="flutter_web_auth">
+                <!-- 카카오톡에서 인증 후 돌아오는 인텐트 필터 추가 -->
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="movesmart" android:host="auth" />
+            </intent-filter>
+        </activity>
+
         <!-- 네이버 로그인 관련 설정 추가 -->
         <meta-data
             android:name="com.naver.sdk.client_id"
-            android:value="@string/client_id" />  <!-- 네이버에서 발급받은 Client ID -->
+            android:value="3iYvNE31NiesaVMSS9im"/>  <!-- 네이버에서 발급받은 Client ID -->
         <meta-data
             android:name="com.naver.sdk.client_secret"
-            android:value="@string/client_secret" />  <!-- 네이버에서 발급받은 Client Secret -->
-        <meta-data
-            android:name="com.naver.sdk.clientName"
-            android:value="@string/client_name" />
+            android:value="_WL_VdKc3O"/>  <!-- 네이버에서 발급받은 Client Secret -->
 
         <!-- 카카오 앱 키 추가 -->
         <meta-data
             android:name="kakao_app_key"
-            android:value="@string/kakao_app_key"/>
+            android:value="a185a267072df6495590e209e7af148b"/>
 
         <!-- Google Maps API 키 추가 -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="@string/com.google.android.geo.API_KEY"/> <!-- Google Maps API 키 -->
+            android:value="AIzaSyBynQLBI_xeCah5rn2leYW-7jzubw57jvQ"/> <!-- Google Maps API 키 -->
 
         <meta-data
             android:name="flutterEmbedding"
