@@ -49,7 +49,7 @@
         <!-- 네이버 로그인 관련 설정 추가 -->
         <meta-data
             android:name="com.naver.sdk.client_id"
-            android:value="3iYvNE31NiesaVMSS9im"/>  <!-- 네이버에서 발급받은 Client ID -->
+            android:value="YOUR_API_KEY_HERE"/>  <!-- 네이버에서 발급받은 Client ID -->
         <meta-data
             android:name="com.naver.sdk.client_secret"
             android:value="_WL_VdKc3O"/>  <!-- 네이버에서 발급받은 Client Secret -->
@@ -57,12 +57,12 @@
         <!-- 카카오 앱 키 추가 -->
         <meta-data
             android:name="kakao_app_key"
-            android:value="a185a267072df6495590e209e7af148b"/>
+            android:value="YOUR_API_KEY_HERE"/>
 
         <!-- Google Maps API 키 추가 -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBynQLBI_xeCah5rn2leYW-7jzubw57jvQ"/> <!-- Google Maps API 키 -->
+            android:value="YOUR_API_KEY_HERE"/> <!-- Google Maps API 키 -->
 
         <meta-data
             android:name="flutterEmbedding"
