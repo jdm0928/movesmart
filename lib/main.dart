@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart'; // Firebase Core 패키지 임포트
 import 'package:movesmart/viewmodels/pathfinding_viewmodel.dart';
 import 'package:provider/provider.dart'; // Provider 패키지 임포트
+import 'package:firebase_core/firebase_core.dart'; // Firebase Core 패키지 임포트
 import 'services/firebase_options.dart'; // Firebase 설정 파일 임포트
+import 'package:kakao_flutter_sdk/kakao_flutter_sdk.dart'; // 전체 SDK
 import 'views/splash_screen.dart'; // SplashScreen import
 import 'viewmodels/splash_viewmodel.dart'; // SplashViewModel import
 import 'viewmodels/login_viewmodel.dart'; // LoginViewModel import
@@ -11,9 +12,7 @@ import 'viewmodels/signup_viewmodel.dart'; // SignUpViewModel import
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // Kakao 초기화
-  // KaKaoSdk.init(
-  //   nativeAppkey: ''
-  // );
+  KakaoSdk.init(nativeAppKey: "@string/kakao_app_key"); // 카카오 앱 키로 초기화
 
   // Firebase 초기화
   await Firebase.initializeApp(

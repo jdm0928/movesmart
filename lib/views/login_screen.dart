@@ -99,7 +99,7 @@ class LoginScreen extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () {
                         final loginViewModel = Provider.of<LoginViewModel>(context, listen: false);
-                        // loginViewModel.signInWithKakao(context); // 카카오 로그인 호출
+                        loginViewModel.signInWithKakao(context); // 카카오 로그인 호출
                       },
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.all(0), // 패딩을 0으로 설정
