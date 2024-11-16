@@ -1,0 +1,46 @@
+name: movesmart
+description: "졸업 작품"
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.5.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  provider: ^6.1.2
+  firebase_core: ^3.6.0 # Firebase Core
+  firebase_auth: ^5.3.1 # Firebase Authentication
+  firebase_database: ^11.1.4 # Firebase Realtime Database
+  firebase_storage: ^12.3.5 # Firebase Storage
+  firebase_app_check: ^0.3.1+6 # Firebase App Check
+  image_picker: ^1.1.2
+  google_sign_in: ^6.2.2 # Google Login
+  google_maps_flutter: ^2.9.0 # Google Map
+  kakao_flutter_sdk: ^1.9.6 # Kakao Login
+  flutter_web_auth_2: ^4.0.1
+  flutter_naver_login: ^2.0.0 # Naver Login
+  webview_flutter: ^4.9.0
+  url_launcher: ^6.3.1
+  geolocator: ^13.0.1
+  http: ^1.2.2
+  cupertino_icons: ^1.0.8
+  uni_links3: ^0.5.3
+  flutter_dotenv: ^5.2.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets: # assets 섹션 추가
+    - assets/android_dark_sq_SI@4x.png
+    - assets/android_light_sq_SI@4x.png
+    - assets/btnD_완성형.png
+    - assets/btnG_완성형.png
+    - assets/kakao_login_large_narrow.png
+    - assets/.env

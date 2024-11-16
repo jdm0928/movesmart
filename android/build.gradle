@@ -18,10 +18,22 @@ allprojects {
         google()
         mavenCentral()
         maven { url 'https://devrepo.kakao.com/nexus/content/groups/public/' } // 카카오 Maven 저장소 추가
+        maven { url 'https://devrepo.kakao.com/nexus/repository/kakaomap-releases/' }
 //        maven { url 'https://maven.naver.com' }  // 네이버 SDK의 Maven Repository 추가
     }
 }
 
+subprojects {
+    afterEvaluate { project ->
+        if (project.plugins.hasPlugin("com.android.application") ||
+                project.plugins.hasPlugin("com.android.library")) {
+            project.android {
+                compileSdkVersion 34
+                buildToolsVersion "34.0.0"
+            }
+        }
+    }
+}
 rootProject.buildDir = "../build"
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"

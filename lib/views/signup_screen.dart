@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../viewmodels/signup_viewmodel.dart'; // ViewModel import
-import 'login_screen.dart'; // 로그인 화면 import
-import '../models/terms_of_service.dart'; // 서비스 이용 약관 import
-import '../models/privacy_policy.dart'; // 개인정보 처리 방침 import
-import '../models/marketing_consent.dart'; // 마케팅 수신 동의 import
+import '../viewmodels/signup_viewmodel.dart'; // ViewModel
+import 'login_screen.dart'; // 로그인 화면
+import '../models/terms_of_service.dart'; // 서비스 이용 약관
+import '../models/privacy_policy.dart'; // 개인정보 처리 방침
+import '../models/marketing_consent.dart'; // 마케팅 수신 동의
 
 class SignUpScreen extends StatefulWidget {
   @override
@@ -118,6 +118,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
       children: [
         TextField(
           controller: _nicknameController,
+          textInputAction: TextInputAction.done,
+          keyboardType: TextInputType.text,
           onChanged: (value) {
             viewModel.onNicknameChanged(value);
             setState(() {});
@@ -137,13 +139,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 : null,
           ),
         ),
-        if (!viewModel.isNicknameValid)
+        if (viewModel.nicknameValidationMessage.message.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 4.0),
             child: Text(
               viewModel.nicknameValidationMessage.message,
-              style: TextStyle(
-                  color: viewModel.nicknameValidationMessage.color),
+              style: TextStyle(color: viewModel.nicknameValidationMessage.color),
             ),
           ),
         SizedBox(height: 16),
@@ -264,6 +265,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
               style: TextStyle(color: viewModel.verificationMessage.color),
             ),
           ),
+        if (viewModel.isEmailSent) ...[
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              '남은 시간: ${viewModel.remainingTime ~/ 60} : ${viewModel.remainingTime % 60}',
+              style: TextStyle(color: Colors.black),
+            ),
+          ),
+        ],
         SizedBox(height: 8),
       ],
     );
@@ -336,11 +346,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
               viewModel.passwordStrengthMessage.message,
               style: TextStyle(
                 color: viewModel.passwordStrengthMessage.message.contains('미흡')
-                    ? Colors.red
+                    ? Colors.red // 미흡일 때 빨간색
                     : viewModel.passwordStrengthMessage.message.contains('양호')
-                    ? Colors.blue
+                    ? Colors.green // 양호일 때 초록색
                     : viewModel.passwordStrengthMessage.message.contains('강력')
-                    ? Colors.green
+                    ? Colors.blue // 강력일 때 파란색
                     : Colors.black,
               ),
             ),

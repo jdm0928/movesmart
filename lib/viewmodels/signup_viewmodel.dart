@@ -63,6 +63,7 @@ class SignUpViewModel extends ChangeNotifier {
   bool isMarketingAccepted = false;
   bool isAllAgreed = false;
 
+  int remainingTime = 60; // 1분을 초 단위로 나타냄
   Timer? _timer;
 
   // 생성자
@@ -98,8 +99,8 @@ class SignUpViewModel extends ChangeNotifier {
 
     if (nickname.isEmpty) {
       isNicknameValid = false;
-      nicknameValidationMessage = ValidationMessage('', Colors.black); // 비어 있으면 메시지 제거
-    } else if (!RegExp(r'^[a-zA-Z0-9가-힣]*$').hasMatch(nickname)) {
+      nicknameValidationMessage = ValidationMessage('', Colors.black);
+    } else if (!RegExp(r'^[a-zA-Z0-9가-힣]+$').hasMatch(nickname)) {
       nicknameValidationMessage = ValidationMessage('닉네임은 문자, 숫자 또는 한글로만 작성해주세요.', Colors.red);
       isNicknameValid = false;
     } else {
@@ -107,7 +108,7 @@ class SignUpViewModel extends ChangeNotifier {
       isNicknameValid = true;
     }
 
-    notifyListeners(); // UI 업데이트
+    notifyListeners();
   }
 
   // 닉네임 초기화
@@ -124,7 +125,6 @@ class SignUpViewModel extends ChangeNotifier {
 
     // 아무것도 작성하지 않은 경우
     if (localPart.isEmpty && domain.isEmpty) {
-      // ValidationMessage를 설정하지 않음
       isEmailValid = false; // 이메일 유효성 초기화
       emailValidationMessage = ValidationMessage('', Colors.transparent); // 메시지 초기화
     }
@@ -136,6 +136,8 @@ class SignUpViewModel extends ChangeNotifier {
     else if (_isValidEmail(email)) {
       isEmailValid = true;
       emailValidationMessage = ValidationMessage('사용 가능한 이메일입니다.', Colors.green);
+      // 이메일 중복 확인 즉시 호출
+      checkEmailInUse(email);
     }
     // 유효하지 않은 이메일인 경우
     else {
@@ -145,41 +147,47 @@ class SignUpViewModel extends ChangeNotifier {
     notifyListeners(); // UI 업데이트
   }
 
-// 이메일 유효성 검사
+  // 이메일 유효성 검사
   bool _isValidEmail(String email) {
     return RegExp(r'^[a-zA-Z0-9._%+-]{1,20}@[a-zA-Z0-9.-]{1,30}\.[a-zA-Z]{2,}$').hasMatch(email);
   }
 
-// 이메일 유효성 상태 설정
+  // 이메일 유효성 상태 설정
   void _setEmailInvalid(String message) {
     isEmailValid = false;
     emailValidationMessage = ValidationMessage(message, Colors.red);
     isEmailSent = false; // 이메일 발송 버튼 비활성화
   }
 
-// 이메일 발송 전 중복 확인 및 발송 처리
+  // 이메일 발송 전 중복 확인 및 발송 처리
   Future<void> validateAndSendEmail() async {
     if (!isEmailValid) {
       _setEmailInvalid('유효한 이메일을 입력해주세요.');
       return; // 유효하지 않은 이메일일 때 조기에 종료
     }
 
-    await checkEmailInUse(email);
+    await checkEmailInUse(email); // 이메일 중복 확인
 
-    if (isEmailValid && isEmailNotUsed) { // 중복되지 않는 경우
+    if (isEmailValid && isEmailNotUsed) {
       emailValidationMessage = ValidationMessage('사용 가능한 이메일입니다.', Colors.green);
       await sendVerificationEmail(); // 인증 메일 발송
+    } else {
+      // 중복된 이메일일 경우 메시지 설정
+      emailValidationMessage = ValidationMessage('이미 사용 중인 이메일 주소입니다.', Colors.red);
     }
+
+    notifyListeners(); // UI 업데이트
   }
 
-// 이메일 중복 확인
+  // 이메일 중복 확인
   Future<void> checkEmailInUse(String email) async {
     try {
       final methods = await _auth.fetchSignInMethodsForEmail(email);
       isEmailNotUsed = methods.isEmpty; // 중복 여부 설정
       isEmailValid = isEmailNotUsed; // 중복 여부에 따라 유효성 설정
+
       emailValidationMessage = isEmailNotUsed
-          ? ValidationMessage('', Colors.black) // 중복이 아닐 경우 메시지 제거
+          ? ValidationMessage('사용 가능한 이메일입니다.', Colors.green) // 중복이 아닐 경우 메시지 제거
           : ValidationMessage('이미 사용 중인 이메일 주소입니다.', Colors.red); // 중복되는 이메일 메시지
     } catch (e) {
       emailValidationMessage = ValidationMessage('이메일 확인 중 오류가 발생했습니다.', Colors.red); // 오류 발생 메시지
@@ -188,54 +196,59 @@ class SignUpViewModel extends ChangeNotifier {
     notifyListeners(); // UI 업데이트
   }
 
-// 이메일 인증 발송
+  // 이메일 인증 발송
   Future<void> sendVerificationEmail() async {
     if (isEmailValid && email.isNotEmpty) {
       try {
         final actionCodeSettings = ActionCodeSettings(
-          url: 'https://jdm0928.github.io/movesmart?email=${Uri.encodeComponent(email)}', // 인증 후 리디렉션 URL
-          handleCodeInApp: true, // 앱 내에서 처리할지 여부
+          url: 'movesmart://signup?email=${Uri.encodeComponent(email)}', // 앱의 딥링크 URL
+          handleCodeInApp: true,
         );
 
         await _auth.sendSignInLinkToEmail(email: email, actionCodeSettings: actionCodeSettings);
         isEmailSent = true;
-        verificationRequestTime = DateTime.now(); // 인증 요청 시간 기록
-        verificationMessage = ValidationMessage('입력하신 이메일 주소로 인증 메일을 보내드렸습니다. 메일함을 확인해주세요.', Colors.green); // 메일 전송 성공 메시지
-        startTimer(); // 인증 메일 유효 시간 시작
+        verificationRequestTime = DateTime.now();
+        verificationMessage = ValidationMessage('입력하신 이메일 주소로 인증 메일을 보내드렸습니다. 메일함을 확인해주세요.', Colors.green);
+        startTimer();
       } catch (e) {
-        verificationMessage = ValidationMessage('인증 메일 발송 중 오류가 발생했습니다.', Colors.red); // 메일 발송 오류 메시지
+        verificationMessage = ValidationMessage('인증 메일 발송 중 오류가 발생했습니다: ${e.toString()}', Colors.red);
       }
 
-      notifyListeners(); // UI 업데이트
+      notifyListeners();
     }
   }
 
-// 인증 메일 유효 시간 타이머 시작
+  // 인증 메일 유효 시간 타이머 시작
   void startTimer() {
-    _timer?.cancel(); // 이전 타이머 취소
-    _timer = Timer(Duration(minutes: 3), () {
-      isEmailSent = false;
-      verificationMessage = ValidationMessage('인증 메일의 유효 기간이 만료되었습니다. \n인증 메일을 재발송 해주세요.', Colors.red);
-      notifyListeners();
+    _timer?.cancel();
+    remainingTime = 60; // 1분으로 초기화
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      if (remainingTime > 0) {
+        remainingTime--;
+      } else {
+        timer.cancel();
+        verificationMessage = ValidationMessage('인증 메일의 유효 기간이 만료되었습니다. 인증 메일을 재발송 해주세요.', Colors.red);
+        isEmailSent = false; // 재발송 가능
+      }
+      notifyListeners(); // UI 업데이트
     });
   }
 
-// 재발송 처리
+  // 재발송 처리
   Future<void> resendVerificationEmail() async {
     if (canResend && isEmailValid && email.isNotEmpty) {
       canResend = false; // 쿨타임 시작
-      verificationMessage = ValidationMessage('', Colors.black); // 이전 메시지 초기화
       await sendVerificationEmail(); // 이메일 재발송
 
       // 쿨타임 설정
-      Timer(Duration(seconds: 10), () {
+      Timer(Duration(seconds: 60), () {
         canResend = true; // 쿨타임 해제
         notifyListeners();
       });
     }
   }
 
-// 인증 성공 처리
+  // 인증 성공 처리
   void confirmEmailVerification() {
     isEmailConfirmed = true;
     verificationMessage = ValidationMessage('인증되었습니다.', Colors.green); // 인증 완료 메시지
@@ -268,18 +281,18 @@ class SignUpViewModel extends ChangeNotifier {
           passwordStrengthMessage = ValidationMessage('비밀번호 안정성: 미흡', Colors.red);
           passwordStrengthValue = 1 / 3; // 1/3 채움
         } else {
-          passwordStrengthColor = Colors.green;
+          passwordStrengthColor = Colors.green; // 양호일 때 초록색
           passwordStrengthMessage = ValidationMessage('비밀번호 안정성: 양호', Colors.green);
           passwordStrengthValue = 2 / 3; // 2/3 채움
         }
       } else {
-        // 비밀번호 길이가 10자 이상인 경우
+        // 비밀번호 길이가 10자 이상인 경우Q
         if (hasUpperCase && hasLowerCase && hasDigit && hasSpecialChar) {
-          passwordStrengthColor = Colors.blue;
+          passwordStrengthColor = Colors.blue; // 강력일 때 파란색
           passwordStrengthMessage = ValidationMessage('비밀번호 안정성: 강력', Colors.blue);
           passwordStrengthValue = 1.0; // 3/3 채움
         } else {
-          passwordStrengthColor = Colors.green;
+          passwordStrengthColor = Colors.green; // 강력하지 않지만 양호일 경우 노란색
           passwordStrengthMessage = ValidationMessage('비밀번호 안정성: 양호', Colors.green);
           passwordStrengthValue = 2 / 3; // 2/3 채움
         }
@@ -288,6 +301,7 @@ class SignUpViewModel extends ChangeNotifier {
 
     notifyListeners(); // UI 업데이트
   }
+
 
   // 비밀번호 확인 체크
   void checkPasswordMatch() {
@@ -326,23 +340,30 @@ class SignUpViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-// 회원가입 처리 메서드
+  // 회원가입 처리 메서드
   Future<void> signUp() async {
     if (canSignUp) {
       try {
+        // Firebase Authentication을 사용하여 사용자 생성
         UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
           email: email,
           password: password,
         );
 
-        // 추가적인 사용자 정보 저장 로직 (예: Firebase Database에 사용자 정보 저장)
+        // 기본 이미지 URL (예: 기본 프로필 이미지 URL)
+        String defaultImageUrl = 'https://firebasestorage.googleapis.com/v0/b/movesmart-86652.firebasestorage.app/o/default_profile_image.png?alt=media&token=46d7ba1c-ef3f-4a94-9a77-b89824691331'; // 기본 이미지 URL을 설정
+
+        // 추가적인 사용자 정보 저장 로직 (Firebase Realtime Database에 사용자 정보 저장)
         await _database.child('users/${userCredential.user!.uid}').set({
           'nickname': nickname,
           'email': email,
           'marketingAccepted': isMarketingAccepted, // 마케팅 수신 동의 여부 저장
+          'profileImageUrl': defaultImageUrl, // 기본 이미지 URL 저장
         });
 
         // 회원가입 후 추가적인 처리 (예: 메인 화면으로 이동 등)
+        // 예를 들어, 메인 화면으로 이동하는 코드 추가 가능
+
       } catch (e) {
         signUpButtonMessage = ValidationMessage('회원가입 중 오류가 발생했습니다: ${e.toString()}', Colors.red); // 오류 발생 메시지
         notifyListeners();

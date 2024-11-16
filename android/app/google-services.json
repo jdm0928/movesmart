@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "172009260998",
+    "firebase_url": "https://movesmart-86652-default-rtdb.firebaseio.com",
+    "project_id": "movesmart-86652",
+    "storage_bucket": "movesmart-86652.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:172009260998:android:180326c621426d863d54c7",
+        "android_client_info": {
+          "package_name": "com.example.movesmart"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "172009260998-23habouth9h1vpo2hjfq31if48qpeov3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.movesmart",
+            "certificate_hash": "b8b35bd0c9f2bb492e13a268c2eb2ceeedcd2534"
+          }
+        },
+        {
+          "client_id": "172009260998-l359u097j84rkamgnkjjlpnlm5kgiqoa.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyATKkD9L69a-96hR4kqNq0m8gAFrJnmy7I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "172009260998-l359u097j84rkamgnkjjlpnlm5kgiqoa.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "172009260998-sgrqmpcc25ovgq23gdetcjaslr49d608.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.movesmart"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
