@@ -3,23 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>인증 완료</title>
-    <script>
-        window.onload = function() {
-            // URL에서 oobCode 파라미터를 가져옵니다.
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('oobCode'); // Firebase에서 제공하는 파라미터
-
-            // 앱으로 리디렉션
-            if (token) {
-                window.location.href = `movesmart://auth?token=${token}`;
-            } else {
-                document.body.innerHTML = "<h1>인증이 실패했습니다.</h1>";
-            }
-        };
-    </script>
+    <title>이메일 인증</title>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js"></script>
 </head>
 <body>
-    <h1>인증 중입니다. 잠시만 기다려 주세요...</h1>
+    <h1>이메일 인증</h1>
+    <p>인증 중입니다...</p>
+    
+    <script>
+        // Firebase 초기화
+        const firebaseConfig = {
+            // Your Firebase config
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        // URL에서 인증 링크 가져오기
+        const urlParams = new URLSearchParams(window.location.search);
+        const oobCode = urlParams.get('oobCode'); // 인증 코드
+
+        // 이메일 인증 처리
+        firebase.auth().applyActionCode(oobCode).then(() => {
+            // 인증 성공 시 처리
+            alert('이메일 인증이 완료되었습니다!');
+
+            // 앱으로 돌아갈 URL (딥링크)
+            const returnToAppUrl = 'yourapp://signup?emailConfirmed=true'; // 딥링크 URL
+
+            // 앱으로 리디렉션
+            window.location.href = returnToAppUrl;
+        }).catch((error) => {
+            // 인증 실패 시 처리
+            alert('인증 중 오류가 발생했습니다: ' + error.message);
+            // 앱으로 돌아갈 URL
+            const returnToAppUrl = 'yourapp://signup?emailConfirmed=false'; // 딥링크 URL
+            window.location.href = returnToAppUrl;
+        });
+    </script>
 </body>
 </html>
