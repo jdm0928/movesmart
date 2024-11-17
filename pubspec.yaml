@@ -16,6 +16,7 @@ dependencies:
   firebase_database: ^11.1.4 # Firebase Realtime Database
   firebase_storage: ^12.3.5 # Firebase Storage
   firebase_app_check: ^0.3.1+6 # Firebase App Check
+  firebase_dynamic_links: ^6.0.10 # Firebase Dynamic Link(25.08 중단)
   image_picker: ^1.1.2
   google_sign_in: ^6.2.2 # Google Login
   google_maps_flutter: ^2.9.0 # Google Map

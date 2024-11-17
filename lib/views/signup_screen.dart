@@ -17,6 +17,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final TextEditingController _domainController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController = TextEditingController();
+  final FocusNode _nicknameFocusNode = FocusNode();
 
   final List<String> _domainList = [
     '직접 입력',
@@ -33,6 +34,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     _domainController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    _nicknameFocusNode.dispose();
     super.dispose();
   }
 
@@ -57,12 +59,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   Widget build(BuildContext context) {
     final viewModel = Provider.of<SignUpViewModel>(context);
-
-    // 닉네임 컨트롤러 초기화
-    _nicknameController.text = viewModel.nickname;
-    _nicknameController.selection = TextSelection.fromPosition(
-      TextPosition(offset: _nicknameController.text.length),
-    );
 
     return Scaffold(
       appBar: AppBar(
@@ -117,12 +113,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         TextField(
-          controller: _nicknameController,
-          textInputAction: TextInputAction.done,
-          keyboardType: TextInputType.text,
+          focusNode: _nicknameFocusNode,
+          controller: _nicknameController..text = viewModel.nickname, // 닉네임을 ViewModel에서 가져옴
+          textInputAction: TextInputAction.next,
+          keyboardType: TextInputType.multiline,
           onChanged: (value) {
-            viewModel.onNicknameChanged(value);
-            setState(() {});
+            viewModel.nickname = value; // ViewModel의 닉네임을 업데이트
           },
           decoration: InputDecoration(
             labelText: '닉네임',
@@ -131,9 +127,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ? IconButton(
               icon: Icon(Icons.clear),
               onPressed: () {
-                viewModel.clearNickname();
-                _nicknameController.clear();
-                setState(() {});
+                viewModel.clearNickname(); // ViewModel에서 닉네임 초기화
+                _nicknameController.clear(); // 닉네임 필드도 초기화
+                setState(() {}); // UI 업데이트
               },
             )
                 : null,
@@ -162,7 +158,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 controller: _localPartController,
                 onChanged: (value) {
                   viewModel.onEmailChanged(value, _domainController.text);
-                  setState(() {});
+                  setState(() {
+                    // 이메일 유효성 추가 체크
+                    viewModel.isEmailValid = viewModel.isEmailNotUsed &&
+                        value.isNotEmpty &&
+                        _domainController.text.isNotEmpty;
+                  });
                 },
                 decoration: InputDecoration(
                   labelText: '로컬 부분',
@@ -188,7 +189,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 controller: _domainController,
                 onChanged: (value) {
                   viewModel.onEmailChanged(_localPartController.text, value);
-                  setState(() {});
+                  setState(() {
+                    // 이메일 유효성 추가 체크
+                    viewModel.isEmailValid = viewModel.isEmailNotUsed &&
+                        _localPartController.text.isNotEmpty &&
+                        value.isNotEmpty;
+                  });
                 },
                 decoration: InputDecoration(
                   labelText: '도메인',
@@ -243,17 +249,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 child: Text(
                   viewModel.emailValidationMessage.message,
                   style: TextStyle(
-                      color: viewModel.emailValidationMessage.color),
+                    color: viewModel.emailValidationMessage.color,
+                  ),
                 ),
               ),
             ),
             ElevatedButton(
-              onPressed: viewModel.isEmailValid && !viewModel.isEmailSent
+              onPressed: viewModel.isEmailNotUsed &&
+                  viewModel.isEmailValid // 이메일 유효성 체크
                   ? () {
-                viewModel.validateAndSendEmail();
+                String email = '${_localPartController.text}@${_domainController.text}';
+                viewModel.sendVerificationEmail(email); // 이메일 인증 메서드 호출
               }
                   : null,
-              child: Text(viewModel.isEmailSent ? '재발송' : '발송'),
+              child: Text('발송'),
             ),
           ],
         ),

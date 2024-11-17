@@ -52,10 +52,12 @@ dependencies {
     implementation 'com.google.android.gms:play-services-location:21.3.0'
     implementation 'com.kakao.maps.open:android:2.12.8'
 
-    implementation platform('com.google.firebase:firebase-bom:33.5.1')
+    implementation platform('com.google.firebase:firebase-bom:33.6.0')
     implementation 'com.google.firebase:firebase-appcheck'
     implementation 'com.google.firebase:firebase-auth' // Firebase Auth
     implementation 'com.google.firebase:firebase-storage' // Firebase Storage
+    implementation 'com.google.firebase:firebase-appcheck-playintegrity' // Firebase App Check
+    implementation 'com.google.firebase:firebase-dynamic-links-ktx'
 
     implementation 'com.android.support:appcompat-v7:28.0.0' // 필요에 따라 추가
 }
