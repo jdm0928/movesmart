@@ -46,3 +46,16 @@ google-services.json
 firebase.json
 assets/.env
 android/app/src/main/AndroidManifest.xml
+android/app/build.gradle
+android/build.gradle
+android/gradle.properties
+android/gradle/
+devtools_options.yaml
+linux/
+macos/
+pubspec.yaml
+web/favicon.png
+web/icons/
+web/index.html
+web/manifest.json
+windows/
