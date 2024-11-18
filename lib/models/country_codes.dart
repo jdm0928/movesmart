@@ -1,11 +1,12 @@
 class CountryCode {
   final String code;
   final String country;
+  final String uniqueValue;
 
-  CountryCode(this.code, this.country);
+  CountryCode(this.code, this.country) : uniqueValue = '$code-$country'; // 코드와 국가명을 조합하여 고유값 생성
 }
 
-// 국가 번호와 이름 목록
+// 국가 번호와 이름 목록 (중복 제거)
 List<CountryCode> countryCodes = [
   CountryCode('+93', '아프가니스탄'),
   CountryCode('+355', '알바니아'),
@@ -127,7 +128,6 @@ List<CountryCode> countryCodes = [
   CountryCode('+261', '모리셔스'),
   CountryCode('+222', '모리타니'),
   CountryCode('+52', '멕시코'),
-  CountryCode('+691', '미크로네시아'),
   CountryCode('+373', '몰도바'),
   CountryCode('+377', '모나코'),
   CountryCode('+976', '몽골'),
@@ -195,5 +195,5 @@ List<CountryCode> countryCodes = [
   CountryCode('+84', '베트남'),
   CountryCode('+681', '웨이크 제도'),
   CountryCode('+1', '미국령 버진 아일랜드'),
-  CountryCode('+82', '대한민국')
+  CountryCode('+82', '대한민국'),
 ];

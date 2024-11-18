@@ -25,7 +25,7 @@ class LoginScreen extends StatelessWidget {
                 TextField(
                   controller: usernameController,
                   decoration: InputDecoration(
-                    labelText: '아이디',
+                    labelText: '이메일',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -70,7 +70,7 @@ class LoginScreen extends StatelessWidget {
                         final viewModel = Provider.of<LoginViewModel>(context, listen: false);
                         viewModel.navigateToForgotUsername(context);
                       },
-                      child: const Text('아이디 찾기'),
+                      child: const Text('이메일 찾기'),
                     ),
                     const SizedBox(width: 16),
                     TextButton(

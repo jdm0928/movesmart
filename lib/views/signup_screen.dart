@@ -94,7 +94,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: viewModel.canSignUp
-                          ? () => viewModel.signUp()
+                          ? () => viewModel.signUp(context)
                           : null,
                       child: Text('가입하기'),
                     ),
@@ -114,16 +114,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
       children: [
         TextField(
           focusNode: _nicknameFocusNode,
-          controller: _nicknameController..text = viewModel.nickname, // 닉네임을 ViewModel에서 가져옴
+          controller: _nicknameController,
           textInputAction: TextInputAction.next,
           keyboardType: TextInputType.multiline,
           onChanged: (value) {
-            viewModel.nickname = value; // ViewModel의 닉네임을 업데이트
+            // ViewModel의 닉네임을 업데이트
+            viewModel.onNicknameChanged(value);
           },
           decoration: InputDecoration(
             labelText: '닉네임',
             border: OutlineInputBorder(),
-            suffixIcon: viewModel.nickname.isNotEmpty
+            suffixIcon: _nicknameController.text.isNotEmpty
                 ? IconButton(
               icon: Icon(Icons.clear),
               onPressed: () {
@@ -135,14 +136,23 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 : null,
           ),
         ),
-        if (viewModel.nicknameValidationMessage.message.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 4.0),
-            child: Text(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
               viewModel.nicknameValidationMessage.message,
               style: TextStyle(color: viewModel.nicknameValidationMessage.color),
             ),
-          ),
+            ElevatedButton(
+              onPressed: viewModel.isNicknameValid // 닉네임 유효성 체크
+                  ? () {
+                viewModel.checkNicknameInUse(viewModel.nickname); // 중복 확인 메서드 호출
+              }
+                  : null,
+              child: Text('중복 확인'),
+            ),
+          ],
+        ),
         SizedBox(height: 16),
       ],
     );
@@ -158,12 +168,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 controller: _localPartController,
                 onChanged: (value) {
                   viewModel.onEmailChanged(value, _domainController.text);
-                  setState(() {
-                    // 이메일 유효성 추가 체크
-                    viewModel.isEmailValid = viewModel.isEmailNotUsed &&
-                        value.isNotEmpty &&
-                        _domainController.text.isNotEmpty;
-                  });
+                  setState(() {});
                 },
                 decoration: InputDecoration(
                   labelText: '로컬 부분',
@@ -189,12 +194,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 controller: _domainController,
                 onChanged: (value) {
                   viewModel.onEmailChanged(_localPartController.text, value);
-                  setState(() {
-                    // 이메일 유효성 추가 체크
-                    viewModel.isEmailValid = viewModel.isEmailNotUsed &&
-                        _localPartController.text.isNotEmpty &&
-                        value.isNotEmpty;
-                  });
+                  setState(() {});
                 },
                 decoration: InputDecoration(
                   labelText: '도메인',
@@ -212,7 +212,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 ),
               ),
             ),
-            SizedBox(width: 16), // 도메인 입력 필드와 드롭다운 사이의 간격 추가
+            SizedBox(width: 16),
             DropdownButton<String>(
               value: _domainController.text.isNotEmpty &&
                   _domainList.contains(_domainController.text)
@@ -239,7 +239,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
             ),
           ],
         ),
-
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -255,34 +254,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
             ),
             ElevatedButton(
-              onPressed: viewModel.isEmailNotUsed &&
-                  viewModel.isEmailValid // 이메일 유효성 체크
+              onPressed: viewModel.isEmailValid // 이메일 유효성 체크
                   ? () {
                 String email = '${_localPartController.text}@${_domainController.text}';
-                viewModel.sendVerificationEmail(email); // 이메일 인증 메서드 호출
+                viewModel.checkEmailInUse(email); // 중복 확인 메서드 호출
               }
                   : null,
-              child: Text('발송'),
+              child: Text('중복 확인'),
             ),
           ],
         ),
-        if (!viewModel.verificationMessage.message.isEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(
-              viewModel.verificationMessage.message,
-              style: TextStyle(color: viewModel.verificationMessage.color),
-            ),
-          ),
-        if (viewModel.isEmailSent) ...[
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(
-              '남은 시간: ${viewModel.remainingTime ~/ 60} : ${viewModel.remainingTime % 60}',
-              style: TextStyle(color: Colors.black),
-            ),
-          ),
-        ],
         SizedBox(height: 8),
       ],
     );
@@ -319,12 +300,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 IconButton(
                   icon: Icon(
-                      viewModel.isPasswordVisible ? Icons.visibility : Icons
-                          .visibility_off),
+                      viewModel.isPasswordVisible ? Icons.visibility : Icons.visibility_off),
                   onPressed: () {
                     setState(() {
-                      viewModel.isPasswordVisible =
-                      !viewModel.isPasswordVisible;
+                      viewModel.isPasswordVisible = !viewModel.isPasswordVisible;
                     });
                   },
                 ),
@@ -390,12 +369,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                 IconButton(
                   icon: Icon(
-                      viewModel.isPasswordVisible ? Icons.visibility : Icons
-                          .visibility_off),
+                      viewModel.isPasswordVisible ? Icons.visibility : Icons.visibility_off),
                   onPressed: () {
                     setState(() {
-                      viewModel.isPasswordVisible =
-                      !viewModel.isPasswordVisible;
+                      viewModel.isPasswordVisible = !viewModel.isPasswordVisible;
                     });
                   },
                 ),
@@ -404,8 +381,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
           ),
           obscureText: !viewModel.isPasswordVisible,
         ),
-        if (viewModel.password.length >= 8 &&
-            viewModel.confirmPassword.isNotEmpty)
+        if (viewModel.password.length >= 8 && viewModel.confirmPassword.isNotEmpty)
           Padding(
             padding: const EdgeInsets.only(top: 8.0),
             child: Text(

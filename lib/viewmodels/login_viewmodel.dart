@@ -18,6 +18,7 @@ class LoginViewModel extends ChangeNotifier {
   final NavigationService _navigationService = NavigationService();
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
+  final DatabaseReference _database = FirebaseDatabase.instance.ref();
 
   // 로그인 함수 (이메일/비밀번호)
   Future<void> login(BuildContext context, String username, String password) async {
@@ -33,6 +34,13 @@ class LoginViewModel extends ChangeNotifier {
       );
 
       if (userCredential.user != null) {
+        // 로그인 성공 시 닉네임 가져오기
+        String nickname = await _fetchNickname(userCredential.user!.uid);
+        _navigateToHome(context);
+
+        // 로그인 성공 메시지 표시
+        _showSuccess(context, '로그인 성공: $nickname');
+
         _navigateToHome(context);
       } else {
         _showError(context, '로그인 실패');
@@ -52,18 +60,22 @@ class LoginViewModel extends ChangeNotifier {
   Future<void> signInWithGoogle(BuildContext context) async {
     try {
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-      final GoogleSignInAuthentication? googleAuth = await googleUser?.authentication;
+      final GoogleSignInAuthentication? googleAuth = await googleUser
+          ?.authentication;
 
       final credential = firebase_auth.GoogleAuthProvider.credential(
         accessToken: googleAuth?.accessToken,
         idToken: googleAuth?.idToken,
       );
 
-      firebase_auth.UserCredential userCredential = await _auth.signInWithCredential(credential);
+      firebase_auth.UserCredential userCredential = await _auth
+          .signInWithCredential(credential);
 
       String? profileImageUrl = googleUser?.photoUrl; // 프로필 이미지 URL
 
-      await _handleUserProfile(userCredential.user, googleUser?.displayName, googleUser?.email, profileImageUrl, context);
+      await _handleUserProfile(
+          userCredential.user, googleUser?.displayName, googleUser?.email,
+          profileImageUrl, context);
     } catch (error) {
       _showError(context, '구글 로그인 중 오류가 발생했습니다: $error');
     }
@@ -109,7 +121,9 @@ class LoginViewModel extends ChangeNotifier {
 
       if (userResponse.statusCode == 200) {
         final userData = json.decode(userResponse.body);
-        await _handleUserProfile(userData, userData['response']['nickname'], userData['response']['email'], userData['response']['profile_image'], context);
+        await _handleUserProfile(userData, userData['response']['nickname'],
+            userData['response']['email'],
+            userData['response']['profile_image'], context);
       } else {
         _showError(context, '사용자 정보를 가져오는 데 실패했습니다: ${userResponse.body}');
       }
@@ -119,7 +133,8 @@ class LoginViewModel extends ChangeNotifier {
   }
 
   // 사용자 프로필 처리 및 Firebase 저장
-  Future<void> _handleUserProfile(firebase_auth.User? user, String? nickname, String? email, String? profileImageUrl, BuildContext context) async {
+  Future<void> _handleUserProfile(firebase_auth.User? user, String? nickname,
+      String? email, String? profileImageUrl, BuildContext context) async {
     if (user == null) return;
 
     // 기존 사용자 정보를 가져오기
@@ -130,13 +145,17 @@ class LoginViewModel extends ChangeNotifier {
     if (userProfile == null || userProfile['profileImage'] == null) {
       // 프로필 이미지 URL이 null인 경우 기본 이미지 URL 사용
       if (profileImageUrl == null) {
-        uploadedImageUrl = 'https://example.com/default-profile-image.png'; // 기본 이미지 URL
+        uploadedImageUrl =
+        'https://example.com/default-profile-image.png'; // 기본 이미지 URL
       } else {
-        uploadedImageUrl = await _uploadProfileImageFromUrl(profileImageUrl, user.uid) ?? 'https://example.com/default-profile-image.png';
+        uploadedImageUrl =
+            await _uploadProfileImageFromUrl(profileImageUrl, user.uid) ??
+                'https://example.com/default-profile-image.png';
       }
 
       // DB에 사용자 정보를 저장
-      await _saveUserToDatabase(user, nickname ?? '', email ?? '', uploadedImageUrl);
+      await _saveUserToDatabase(
+          user, nickname ?? '', email ?? '', uploadedImageUrl);
     } else {
       // 기존 프로필 이미지가 있는 경우, 기존 정보를 사용
       uploadedImageUrl = userProfile['profileImage'];
@@ -162,7 +181,8 @@ class LoginViewModel extends ChangeNotifier {
   }
 
 // URL에서 프로필 이미지 업로드
-  Future<String?> _uploadProfileImageFromUrl(String imageUrl, String userId) async {
+  Future<String?> _uploadProfileImageFromUrl(String imageUrl,
+      String userId) async {
     try {
       // 이미지 다운로드
       final response = await http.get(Uri.parse(imageUrl));
@@ -172,7 +192,9 @@ class LoginViewModel extends ChangeNotifier {
       final bytes = response.bodyBytes;
 
       // Firebase Storage에 업로드
-      String filePath = 'profile_images/$userId/${DateTime.now().millisecondsSinceEpoch}.png'; // 사용자 UID 포함
+      String filePath = 'profile_images/$userId/${DateTime
+          .now()
+          .millisecondsSinceEpoch}.png'; // 사용자 UID 포함
       FirebaseStorage storage = FirebaseStorage.instance;
       await storage.ref(filePath).putData(bytes);
 
@@ -185,7 +207,8 @@ class LoginViewModel extends ChangeNotifier {
   }
 
 // Firebase에 사용자 정보 저장 함수
-  Future<void> _saveUserToDatabase(firebase_auth.User? user, String nickname, String email, String profileImage) async {
+  Future<void> _saveUserToDatabase(firebase_auth.User? user, String nickname,
+      String email, String profileImage) async {
     if (user == null) return;
 
     final userId = user.uid;
@@ -208,9 +231,16 @@ class LoginViewModel extends ChangeNotifier {
     );
   }
 
+  // 닉네임을 가져오는 메서드
+  Future<String> _fetchNickname(String userId) async {
+    final snapshot = await _database.child('users/$userId/nickname').once();
+    return snapshot.snapshot.value != null ? snapshot.snapshot.value.toString() : '사용자'; // 기본 사용자 이름
+  }
+
   // 성공 메시지 표시 함수
   void _showSuccess(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), backgroundColor: Colors.green));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.green));
   }
 
   // 회원가입 화면으로 이동하는 함수
@@ -247,34 +277,12 @@ class LoginViewModel extends ChangeNotifier {
       SnackBar(
         content: Text(message),
         behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom + 16),
+        margin: EdgeInsets.only(bottom: MediaQuery
+            .of(context)
+            .viewInsets
+            .bottom + 16),
       ),
     );
   }
 
-  // 카카오 사용자 정보 가져오기
-  Future<http.Response> _getKakaoToken(String authCode) async {
-    return await http.post(
-      Uri.parse('https://kauth.kakao.com/oauth/token'),
-      headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-      body: {
-        'grant_type': 'authorization_code',
-        'client_id': 'a185a267072df6495590e209e7af148b',
-        'redirect_uri': 'movesmart://auth',
-        'code': authCode,
-      },
-    );
-  }
-
-  Future<http.Response> _getKakaoUserInfo(String accessToken) async {
-    return await http.get(
-      Uri.parse('https://kapi.kakao.com/v2/user/me'),
-      headers: {'Authorization': 'Bearer $accessToken'},
-    );
-  }
 }
-
-// extension on kakao.AuthCodeClient {
-//   request() {}
-// }
-

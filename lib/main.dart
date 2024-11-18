@@ -91,27 +91,50 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   late SignUpViewModel signUpViewModel;
+  final FirebaseAuth _auth = FirebaseAuth.instance; // FirebaseAuth 인스턴스 생성
 
   @override
   void initState() {
     super.initState();
     signUpViewModel = SignUpViewModel(); // 인스턴스화
-    _handleDeepLink();
+    _handleIncomingLinks();
   }
 
-  Future<void> _handleDeepLink() async {
-    final initialLink = await FirebaseDynamicLinks.instance.getInitialLink();
+  void _handleIncomingLinks() async {
+    // 딥 링크를 처리하는 로직
+    final PendingDynamicLinkData? initialLinkData = await FirebaseDynamicLinks.instance.getInitialLink();
+    final Uri? initialLink = initialLinkData?.link; // 여기에서 link를 가져옵니다.
+
     if (initialLink != null) {
-      await signUpViewModel.handleEmailVerification(initialLink.link.toString());
+      handleIncomingLink(initialLink);
     }
 
+    // 앱이 열려 있는 동안에 딥 링크를 처리하는 리스너 추가
     FirebaseDynamicLinks.instance.onLink.listen((dynamicLink) {
-      if (dynamicLink != null && dynamicLink.link != null) {
-        signUpViewModel.handleEmailVerification(dynamicLink.link.toString());
-      }
-    }, onError: (err) {
-      print('링크 처리 중 오류 발생: $err');
+      final Uri uri = dynamicLink.link;
+      handleIncomingLink(uri);
+    }).onError((error) {
+      // 오류 처리
+      print('딥 링크 처리 중 오류 발생: $error');
     });
+  }
+
+  void handleIncomingLink(Uri uri) {
+    final emailLink = uri.toString();
+    if (_auth.isSignInWithEmailLink(emailLink)) {
+      final email = uri.queryParameters['email'];
+      if (email != null) {
+        _auth.signInWithEmailLink(email: email, emailLink: emailLink).then((userCredential) {
+          // 성공적으로 인증된 경우 앱의 특정 화면으로 이동
+          Navigator.pushReplacementNamed(context, '/home'); // 예시: 홈 화면으로 이동
+        }).catchError((error) {
+          // 오류 처리
+          print('인증 중 오류 발생: $error');
+        });
+      }
+    } else {
+      print('유효하지 않은 인증 링크입니다.');
+    }
   }
 
   @override

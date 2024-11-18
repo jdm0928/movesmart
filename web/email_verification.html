@@ -7,6 +7,18 @@
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.0.0/firebase-auth.js"></script>
     <script>
+        // Firebase 초기화
+        const firebaseConfig = {
+            apiKey: "AIzaSyATKkD9L69a-96hR4kqNq0m8gAFrJnmy7I",
+            authDomain: "movesmart-86652.firebaseapp.com",
+            projectId: "movesmart-86652",
+            storageBucket: "movesmart-86652.appspot.com",
+            messagingSenderId: "172009260998",
+            appId: "1:172009260998:android:180326c621426d863d54c7"
+        };
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+
         // URL에서 인증 링크 가져오기
         const urlParams = new URLSearchParams(window.location.search);
         const oobCode = urlParams.get('oobCode'); // 인증 코드
